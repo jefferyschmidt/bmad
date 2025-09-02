@@ -1,0 +1,48 @@
+Here's the HTML content for the default layout file (`_layouts/default.html`) based on the provided project requirements:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page.title }}</title>
+  <link rel="stylesheet" href="/assets/css/styles.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/setup/">Outlook Setup</a></li>
+        <li><a href="/email/">Sending Email</a></li>
+        <li><a href="/security/">Email Security</a></li>
+        <li><a href="/autoresponders/">Vacation Autoresponders</a></li>
+        <li><a href="/signatures/">Email Signatures</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    {{ content }}
+  </main>
+
+  <footer>
+    <p>&copy; {{ site.time | date: '%Y' }} - Outlook Instructional Website</p>
+  </footer>
+
+  <script src="/assets/js/script.js"></script>
+</body>
+</html>
+```
+
+Explanation:
+
+1. **HTML5 structure**: The layout includes the basic HTML5 structure with `<html>`, `<head>`, and `<body>` elements.
+2. **Responsive meta tags**: The `<meta name="viewport">` tag is included to ensure the website is responsive and adapts to different device sizes.
+3. **Navigation**: The navigation is defined as an unordered list (`<ul>`) with links to the following pages: Home, Outlook Setup, Sending Email, Email Security, Vacation Autoresponders, and Email Signatures.
+4. **Content area**: The `{{ content }}` placeholder is included to render the content of each individual page.
+5. **Footer**: The footer includes a copyright notice with the current year.
+6. **JavaScript**: A link to a JavaScript file (`/assets/js/script.js`) is included at the end of the body for any additional functionality.
+
+This default layout provides a basic structure for the Outlook instructional website, including a responsive design, navigation, content area, and footer. You can further customize the CSS (`/assets/css/styles.css`) and JavaScript (`/assets/js/script.js`) files to match the specific design and functionality requirements of the project.

@@ -50,8 +50,9 @@ class ProjectResponse(BaseModel):
     requirements: str
     refined_requirements: Optional[str] = None
     user_stories: Optional[str] = None
-    data_model: Optional[str] = None
+    ux_design: Optional[str] = None
     system_architecture: Optional[str] = None
+    tech_stack: Optional[str] = None
     status: str
     archived: bool
     ai_provider: str
@@ -73,14 +74,23 @@ class RequirementsAnalysisResponse(BaseModel):
     user_stories: Optional[List[Dict[str, Any]]] = None
     error: Optional[str] = None
 
-class DataModelResponse(BaseModel):
+class UXDesignResponse(BaseModel):
     success: bool
-    data_model: Optional[str] = None
+    ux_design: Optional[str] = None
     error: Optional[str] = None
 
 class SystemArchitectureResponse(BaseModel):
     success: bool
     system_architecture: Optional[str] = None
+    error: Optional[str] = None
+
+class ProjectGenerationResponse(BaseModel):
+    success: bool
+    project_path: Optional[str] = None
+    tech_stack: Optional[Dict[str, Any]] = None
+    code_generation: Optional[Dict[str, Any]] = None
+    documentation: Optional[Dict[str, Any]] = None
+    message: Optional[str] = None
     error: Optional[str] = None
 
 class ProjectListResponse(BaseModel):

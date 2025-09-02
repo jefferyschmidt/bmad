@@ -5,7 +5,8 @@ This package contains AI agent implementations for various roles in the BMAD pip
 """
 
 from .requirements_analyst import RequirementsAnalystAgent
-from .data_modeler import DataModelerAgent
+from .ux_designer import UXDesignerAgent
 from .software_architect import SoftwareArchitectAgent
+from .full_stack_developer import FullStackDeveloperAgent
 
-__all__ = ['RequirementsAnalystAgent', 'DataModelerAgent', 'SoftwareArchitectAgent']
+__all__ = ['RequirementsAnalystAgent', 'UXDesignerAgent', 'SoftwareArchitectAgent', 'FullStackDeveloperAgent']

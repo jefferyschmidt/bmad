@@ -43,15 +43,16 @@ const ProjectWorkspace: React.FC = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
-  const [generatingDataModel, setGeneratingDataModel] = useState(false);
   const [generatingArchitecture, setGeneratingArchitecture] = useState(false);
+  const [generatingUXDesign, setGeneratingUXDesign] = useState(false);
+  const [generatingProject, setGeneratingProject] = useState(false);
   const [editForm, setEditForm] = useState({
     name: '',
     description: '',
     requirements: '',
     ai_provider: ''
   });
-  const [activeStage, setActiveStage] = useState('requirements'); // 'requirements', 'data-model', 'architecture'
+  const [activeStage, setActiveStage] = useState('requirements'); // 'requirements', 'data-model', 'architecture', 'project'
 
   const fetchProject = useCallback(async () => {
     if (!id) return;
@@ -154,35 +155,35 @@ const ProjectWorkspace: React.FC = () => {
     }
   };
 
-  const generateDataModel = async () => {
+  const generateUXDesign = async () => {
     if (!project) return;
     try {
-      setGeneratingDataModel(true);
+      setGeneratingUXDesign(true);
       setError(null); // Clear any previous errors
       setSuccess(null); // Clear any previous success messages
       
-      const response = await fetch(`/api/v1/projects/${project.id}/generate-data-model`, {
+      const response = await fetch(`/api/v1/projects/${project.id}/generate-ux-design`, {
         method: 'POST',
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate data model');
+        throw new Error('Failed to generate UX/UI design');
       }
 
       const result = await response.json();
       
       if (result.success) {
-        // Data model generation completed successfully
+        // UX/UI design generation completed successfully
         await fetchProject();
-        setSuccess('Data model generation completed successfully!');
+        setSuccess('UX/UI design generated successfully!');
       } else {
-        // Data model generation failed - show the error message
-        setError(result.error || 'Data model generation failed');
+        // UX/UI design generation failed - show the error message
+        setError(result.error || 'UX/UI design generation failed');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate data model');
+      setError(err instanceof Error ? err.message : 'Failed to generate UX/UI design');
     } finally {
-      setGeneratingDataModel(false);
+      setGeneratingUXDesign(false);
     }
   };
 
@@ -218,6 +219,38 @@ const ProjectWorkspace: React.FC = () => {
     }
   };
 
+  const generateProject = async () => {
+    if (!project) return;
+    try {
+      setGeneratingProject(true);
+      setError(null); // Clear any previous errors
+      setSuccess(null); // Clear any previous success messages
+      
+      const response = await fetch(`/api/v1/projects/${project.id}/generate-project`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate project');
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        // Project generation completed successfully
+        await fetchProject();
+        setSuccess('Project generated successfully! Check the projects folder for your generated code.');
+      } else {
+        // Project generation failed - show the error message
+        setError(result.error || 'Project generation failed');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate project');
+    } finally {
+      setGeneratingProject(false);
+    }
+  };
+
   const handleArchiveProject = async (archived: boolean) => {
     if (!project) return;
     try {
@@ -250,6 +283,8 @@ const ProjectWorkspace: React.FC = () => {
         return 'info';
       case 'System Architecture Complete':
         return 'warning';
+      case 'Project Generated':
+        return 'success';
       default:
         return 'default';
     }
@@ -263,6 +298,8 @@ const ProjectWorkspace: React.FC = () => {
         return '🗄️';
       case 'System Architecture Complete':
         return '🏗️';
+      case 'Project Generated':
+        return '🚀';
       default:
         return '📝';
     }
@@ -374,18 +411,25 @@ const ProjectWorkspace: React.FC = () => {
                     completed: !!project.refined_requirements
                   },
                   {
-                    key: 'data-model',
-                    label: 'Data Model',
-                    icon: <span>🗄️</span>,
-                    available: !!project.refined_requirements,
-                    completed: !!project.data_model
-                  },
-                  {
                     key: 'architecture',
                     label: 'System Architecture',
                     icon: <span>🏗️</span>,
-                    available: !!project.data_model,
+                    available: !!project.refined_requirements,
                     completed: !!project.system_architecture
+                  },
+                  {
+                    key: 'ux-design',
+                    label: 'UX/UI Design',
+                    icon: <span>🎨</span>,
+                    available: !!project.system_architecture,
+                    completed: !!project.ux_design
+                  },
+                  {
+                    key: 'project',
+                    label: 'Generate Project',
+                    icon: <span>🚀</span>,
+                    available: !!project.ux_design,
+                    completed: project.status === 'Project Generated'
                   }
                 ].map((stage, index) => (
                   <React.Fragment key={stage.key}>
@@ -468,50 +512,7 @@ const ProjectWorkspace: React.FC = () => {
                     </Grow>
                   )}
 
-                  {/* Data Model Stage */}
-                  {activeStage === 'data-model' && (
-                    <Grow in={true} timeout={300}>
-                      <Box>
-                        <Typography variant="h5" gutterBottom>
-                          Data Model
-                        </Typography>
-                        
-                        {project.data_model ? (
-                          <Box>
-                            <Typography variant="h6" gutterBottom>
-                              Database Schema
-                            </Typography>
-                            <Paper variant="outlined" sx={{ p: 2 }}>
-                              <Typography variant="body1" component="pre" sx={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
-                                {project.data_model}
-                              </Typography>
-                            </Paper>
-                          </Box>
-                        ) : (
-                          <Box>
-                            <Alert severity="info" sx={{ mb: 2 }}>
-                              No data model generated yet. Complete requirements analysis first, then click "Generate Data Model".
-                            </Alert>
-                          </Box>
-                        )}
-                        
-                        {/* Data Model Button - Always visible if requirements exist */}
-                        {project.refined_requirements && (
-                          <Box sx={{ mt: 2 }}>
-                            <Button
-                              variant="contained"
-                              color="secondary"
-                              startIcon={<span>🗄️</span>}
-                              onClick={generateDataModel}
-                              disabled={generatingDataModel}
-                            >
-                              {generatingDataModel ? 'Generating Data Model...' : project.data_model ? 'Regenerate Data Model' : 'Generate Data Model'}
-                            </Button>
-                          </Box>
-                        )}
-                      </Box>
-                    </Grow>
-                  )}
+
 
                   {/* Architecture Stage */}
                   {activeStage === 'architecture' && (
@@ -540,8 +541,8 @@ const ProjectWorkspace: React.FC = () => {
                           </Box>
                         )}
                         
-                        {/* Architecture Button - Always visible if data model exists */}
-                        {project.data_model && (
+                        {/* Architecture Button - Always visible if requirements exist */}
+                        {project.refined_requirements && (
                           <Box sx={{ mt: 2 }}>
                             <Button
                               variant="contained"
@@ -551,6 +552,183 @@ const ProjectWorkspace: React.FC = () => {
                               disabled={generatingArchitecture}
                             >
                               {generatingArchitecture ? 'Generating System Architecture...' : project.system_architecture ? 'Regenerate System Architecture' : 'Generate System Architecture'}
+                            </Button>
+                          </Box>
+                        )}
+                      </Box>
+                    </Grow>
+                  )}
+
+                  {/* UX/UI Design Stage */}
+                  {activeStage === 'ux-design' && (
+                    <Grow in={true} timeout={300}>
+                      <Box>
+                        <Typography variant="h5" gutterBottom>
+                          UX/UI Design
+                        </Typography>
+                        
+                        {project.ux_design ? (
+                          <Box>
+                            <Alert severity="success" sx={{ mb: 2 }}>
+                              🎨 UX/UI Design completed! Your application design is ready.
+                            </Alert>
+                            <Typography variant="h6" gutterBottom>
+                              Design Specifications
+                            </Typography>
+                            <Paper variant="outlined" sx={{ p: 2 }}>
+                              <Typography variant="body1" component="pre" sx={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
+                                {project.ux_design}
+                              </Typography>
+                            </Paper>
+                          </Box>
+                        ) : (
+                          <Box>
+                            <Alert severity="info" sx={{ mb: 2 }}>
+                              Ready to design the user experience and interface! This will create design specifications for your application.
+                            </Alert>
+                          </Box>
+                        )}
+                        
+                        {/* UX/UI Design Button - Always visible if system architecture exists */}
+                        {project.system_architecture && (
+                          <Box sx={{ mt: 2 }}>
+                            <Button
+                              variant="contained"
+                              color="primary"
+                              startIcon={<span>🎨</span>}
+                              onClick={generateUXDesign}
+                              disabled={generatingUXDesign}
+                            >
+                              {generatingUXDesign ? 'Generating Design...' : project.ux_design ? 'Regenerate Design' : 'Generate UX/UI Design'}
+                            </Button>
+                          </Box>
+                        )}
+                      </Box>
+                    </Grow>
+                  )}
+
+                  {/* Project Generation Stage */}
+                  {activeStage === 'project' && (
+                    <Grow in={true} timeout={300}>
+                      <Box>
+                        <Typography variant="h5" gutterBottom>
+                          Generate Project
+                        </Typography>
+                        
+                        {project.status === 'Project Generated' ? (
+                          <Box>
+                            <Alert severity="success" sx={{ mb: 2 }}>
+                              🎉 Project generated successfully! Your complete working software is ready.
+                            </Alert>
+                            
+                            {/* Project Structure Display */}
+                            <Typography variant="h6" gutterBottom>
+                              📁 Generated Project Structure
+                            </Typography>
+                            <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
+                              <Box sx={{ fontFamily: 'monospace', fontSize: '0.9rem' }}>
+                                <Box sx={{ color: 'primary.main', fontWeight: 'bold' }}>
+                                  projects/{project.id}_{project.name.toLowerCase().replace(/\s+/g, '_')}/
+                                </Box>
+                                <Box sx={{ ml: 2, mt: 1 }}>
+                                  <Box sx={{ color: 'text.secondary' }}>├── 📄 README.md</Box>
+                                  <Box sx={{ color: 'text.secondary' }}>├── 📄 tech-stack.md</Box>
+                                  <Box sx={{ color: 'text.secondary' }}>├── 📄 .gitignore</Box>
+                                  <Box sx={{ color: 'text.secondary' }}>├── 📄 package.json</Box>
+                                  <Box sx={{ color: 'text.secondary' }}>├── 📄 Dockerfile</Box>
+                                  <Box sx={{ color: 'text.secondary' }}>├── 📄 docker-compose.yml</Box>
+                                  <Box sx={{ color: 'text.secondary' }}>├── 📁 frontend/</Box>
+                                  <Box sx={{ ml: 4, color: 'text.secondary' }}>
+                                    <Box>├── 📄 package.json</Box>
+                                    <Box>├── 📁 src/</Box>
+                                    <Box sx={{ ml: 2 }}>
+                                      <Box>├── 📄 App.js</Box>
+                                      <Box>├── 📄 App.css</Box>
+                                      <Box>├── 📄 index.js</Box>
+                                      <Box>├── 📄 index.css</Box>
+                                      <Box>├── 📁 components/</Box>
+                                      <Box sx={{ ml: 2 }}>└── 📄 Header.js</Box>
+                                      <Box>└── 📁 pages/</Box>
+                                      <Box sx={{ ml: 2 }}>
+                                        <Box>├── 📄 Home.js</Box>
+                                        <Box>├── 📄 Gallery.js</Box>
+                                        <Box>└── 📄 Marketplace.js</Box>
+                                      </Box>
+                                    </Box>
+                                    <Box>└── 📁 public/</Box>
+                                    <Box sx={{ ml: 2 }}>└── 📄 index.html</Box>
+                                  </Box>
+                                  <Box sx={{ color: 'text.secondary' }}>├── 📁 backend/</Box>
+                                  <Box sx={{ ml: 4, color: 'text.secondary' }}>
+                                    <Box>├── 📄 package.json</Box>
+                                    <Box>├── 📄 server.js</Box>
+                                    <Box>└── 📄 .env.example</Box>
+                                  </Box>
+                                  <Box sx={{ color: 'text.secondary' }}>├── 📁 docs/</Box>
+                                  <Box sx={{ color: 'text.secondary' }}>├── 📁 config/</Box>
+                                  <Box sx={{ color: 'text.secondary' }}>└── 📁 scripts/</Box>
+                                </Box>
+                              </Box>
+                            </Paper>
+
+                            {/* Quick Start Instructions */}
+                            <Typography variant="h6" gutterBottom>
+                              🚀 Quick Start
+                            </Typography>
+                            <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
+                              <Typography variant="body2" component="div" sx={{ mb: 2 }}>
+                                <strong>Backend (Express.js):</strong>
+                              </Typography>
+                              <Box sx={{ fontFamily: 'monospace', fontSize: '0.85rem', bgcolor: 'grey.50', p: 1, borderRadius: 1, mb: 2 }}>
+                                cd projects/{project.id}_{project.name.toLowerCase().replace(/\s+/g, '_')}/backend<br/>
+                                npm install<br/>
+                                cp .env.example .env<br/>
+                                npm run dev
+                              </Box>
+                              
+                              <Typography variant="body2" component="div" sx={{ mb: 2 }}>
+                                <strong>Frontend (React.js):</strong>
+                              </Typography>
+                              <Box sx={{ fontFamily: 'monospace', fontSize: '0.85rem', bgcolor: 'grey.50', p: 1, borderRadius: 1 }}>
+                                cd projects/{project.id}_{project.name.toLowerCase().replace(/\s+/g, '_')}/frontend<br/>
+                                npm install<br/>
+                                npm start
+                              </Box>
+                            </Paper>
+
+                            {/* Tech Stack Summary */}
+                            <Typography variant="h6" gutterBottom>
+                              🛠️ Tech Stack Used
+                            </Typography>
+                            <Paper variant="outlined" sx={{ p: 2 }}>
+                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                                <Chip label="React.js" color="primary" variant="outlined" />
+                                <Chip label="Express.js" color="primary" variant="outlined" />
+                                <Chip label="Node.js" color="primary" variant="outlined" />
+                                <Chip label="PostgreSQL" color="primary" variant="outlined" />
+                                <Chip label="Docker" color="primary" variant="outlined" />
+                              </Box>
+                            </Paper>
+                          </Box>
+                        ) : (
+                          <Box>
+                            <Alert severity="info" sx={{ mb: 2 }}>
+                              Ready to generate your complete working software project! This will create a full application based on your requirements, data model, and system architecture.
+                            </Alert>
+                          </Box>
+                        )}
+                        
+                        {/* Project Generation Button - Always visible if system architecture exists */}
+                        {project.system_architecture && (
+                          <Box sx={{ mt: 2 }}>
+                            <Button
+                              variant="contained"
+                              color="primary"
+                              startIcon={<span>🚀</span>}
+                              onClick={generateProject}
+                              disabled={generatingProject}
+                            >
+                              {generatingProject ? 'Generating Project...' : project.status === 'Project Generated' ? 'Regenerate Project' : 'Generate Project'}
                             </Button>
                           </Box>
                         )}

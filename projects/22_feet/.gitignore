@@ -1,0 +1,15 @@
+.DS_Store
+node_modules/
+npm-debug.log
+yarn-error.log
+.env
+.idea/
+*.swp
+*.swo
+.vscode/
+.serverless/
+.build/
+dist/
+build/
+coverage/
+.nyc_output/

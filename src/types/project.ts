@@ -4,7 +4,7 @@ export interface Project {
   description?: string;
   requirements: string;
   refined_requirements?: string;
-  data_model?: string;
+  ux_design?: string;
   system_architecture?: string;
   status: string;
   archived: boolean;
@@ -23,7 +23,7 @@ export interface AIProvider {
   created_at: string;
 }
 
-export type PipelineStage = 'requirements' | 'data-model' | 'architecture';
+export type PipelineStage = 'requirements' | 'architecture' | 'ux-design';
 
 export interface StageConfig {
   key: PipelineStage;

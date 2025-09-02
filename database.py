@@ -76,19 +76,19 @@ async def init_db():
             print(f"Error checking/adding archived column: {e}")
             # Continue anyway, the column might already exist
     
-    # Check and add data_model column in a separate transaction
+    # Check and add ux_design column in a separate transaction
     async with engine.begin() as conn:
         try:
-            # Check if data_model column exists
-            result = await conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'bmad_projects' AND column_name = 'data_model'"))
+            # Check if ux_design column exists
+            result = await conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'bmad_projects' AND column_name = 'ux_design'"))
             if not result.fetchone():
                 # Column doesn't exist, add it
-                await conn.execute(text("ALTER TABLE bmad_projects ADD COLUMN data_model TEXT"))
-                print("Added data_model column to bmad_projects table")
+                await conn.execute(text("ALTER TABLE bmad_projects ADD COLUMN ux_design TEXT"))
+                print("Added ux_design column to bmad_projects table")
             else:
-                print("Data model column already exists")
+                print("UX design column already exists")
         except Exception as e:
-            print(f"Error checking/adding data_model column: {e}")
+            print(f"Error checking/adding ux_design column: {e}")
             # Continue anyway, the column might already exist
     
     # Check and add system_architecture column in a separate transaction
@@ -119,6 +119,21 @@ async def init_db():
                 print("AI provider column already exists")
         except Exception as e:
             print(f"Error checking/adding ai_provider column: {e}")
+            # Continue anyway, the column might already exist
+    
+    # Check and add tech_stack column in a separate transaction
+    async with engine.begin() as conn:
+        try:
+            # Check if tech_stack column exists
+            result = await conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'bmad_projects' AND column_name = 'tech_stack'"))
+            if not result.fetchone():
+                # Column doesn't exist, add it
+                await conn.execute(text("ALTER TABLE bmad_projects ADD COLUMN tech_stack TEXT"))
+                print("Added tech_stack column to bmad_projects table")
+            else:
+                print("Tech stack column already exists")
+        except Exception as e:
+            print(f"Error checking/adding tech_stack column: {e}")
             # Continue anyway, the column might already exist
     
     # Create ai_providers table if it doesn't exist

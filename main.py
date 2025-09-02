@@ -13,12 +13,12 @@ from database import get_db, init_db
 from models import Project, AIProvider
 from services import ProjectService
 from agents.requirements_analyst import RequirementsAnalystAgent
-from agents.data_modeler import DataModelerAgent
+from agents.ux_designer import UXDesignerAgent
 from agents.software_architect import SoftwareArchitectAgent
 from schemas import (
     ProjectCreate, ProjectUpdate, ProjectResponse, ProjectListResponse,
-    RequirementsAnalysisResponse, DataModelResponse, SystemArchitectureResponse,
-    ArchiveProjectRequest, AIProviderResponse
+    RequirementsAnalysisResponse, UXDesignResponse, SystemArchitectureResponse,
+    ArchiveProjectRequest, AIProviderResponse, ProjectGenerationResponse
 )
 
 app = FastAPI(title="BMAD API", version="1.0.0")
@@ -91,9 +91,10 @@ async def get_projects(db: AsyncSession = Depends(get_db)):
                 created_at=row[7],
                 updated_at=row[8],
                 archived=row[9],
-                data_model=row[10],
-                system_architecture=row[11],
-                ai_provider=row[12]
+                system_architecture=row[11],  # Skip data_model at index 10
+                ai_provider=row[12],
+                ux_design=row[13],
+                tech_stack=row[14] if len(row) > 14 else None
             ))
         
         return ProjectListResponse(projects=project_list, total=len(project_list))
@@ -132,9 +133,10 @@ async def create_project(project: ProjectCreate, db: AsyncSession = Depends(get_
             created_at=new_project[7],
             updated_at=new_project[8],
             archived=new_project[9],
-            data_model=new_project[10],
-            system_architecture=new_project[11],
-            ai_provider=new_project[12]
+            system_architecture=new_project[11],  # Skip data_model at index 10
+            ai_provider=new_project[12],
+            ux_design=new_project[13],
+            tech_stack=new_project[14] if len(new_project) > 14 else None
         )
     except Exception as e:
         await db.rollback()
@@ -164,9 +166,10 @@ async def get_project(project_id: int, db: AsyncSession = Depends(get_db)):
             created_at=project[7],
             updated_at=project[8],
             archived=project[9],
-            data_model=project[10],
-            system_architecture=project[11],
-            ai_provider=project[12]
+            system_architecture=project[11],  # Skip data_model at index 10
+            ai_provider=project[12],
+            ux_design=project[13],
+            tech_stack=project[14] if len(project) > 14 else None
         )
     except HTTPException:
         raise
@@ -227,9 +230,10 @@ async def update_project(project_id: int, project_update: ProjectUpdate, db: Asy
             created_at=updated_project[7],
             updated_at=updated_project[8],
             archived=updated_project[9],
-            data_model=updated_project[10],
-            system_architecture=updated_project[11],
-            ai_provider=updated_project[12]
+            system_architecture=updated_project[11],  # Skip data_model at index 10
+            ai_provider=updated_project[12],
+            ux_design=updated_project[13],
+            tech_stack=updated_project[14] if len(updated_project) > 14 else None
         )
     except HTTPException:
         raise
@@ -276,14 +280,14 @@ async def analyze_requirements(project_id: int, db: AsyncSession = Depends(get_d
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Requirements analysis failed: {str(e)}")
 
-@app.post("/api/v1/projects/{project_id}/generate-data-model", response_model=DataModelResponse)
-async def generate_data_model(project_id: int, db: AsyncSession = Depends(get_db)):
-    """Generate data model using the Data Modeler agent"""
+@app.post("/api/v1/projects/{project_id}/generate-ux-design", response_model=UXDesignResponse)
+async def generate_ux_design(project_id: int, db: AsyncSession = Depends(get_db)):
+    """Generate UX/UI design using the UX Designer agent"""
     try:
-        result = await ProjectService.generate_data_model(db, project_id)
-        return DataModelResponse(**result)
+        result = await ProjectService.generate_ux_design(db, project_id)
+        return UXDesignResponse(**result)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Data model generation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"UX design generation failed: {str(e)}")
 
 @app.post("/api/v1/projects/{project_id}/generate-system-architecture", response_model=SystemArchitectureResponse)
 async def generate_system_architecture(project_id: int, db: AsyncSession = Depends(get_db)):
@@ -293,3 +297,12 @@ async def generate_system_architecture(project_id: int, db: AsyncSession = Depen
         return SystemArchitectureResponse(**result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"System architecture generation failed: {str(e)}")
+
+@app.post("/api/v1/projects/{project_id}/generate-project", response_model=ProjectGenerationResponse)
+async def generate_project(project_id: int, db: AsyncSession = Depends(get_db)):
+    """Generate complete working software project using the Full Stack Developer agent"""
+    try:
+        result = await ProjectService.generate_project(db, project_id)
+        return ProjectGenerationResponse(**result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Project generation failed: {str(e)}")

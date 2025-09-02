@@ -32,8 +32,9 @@ class Project(Base):
     requirements = Column(Text, nullable=False)
     refined_requirements = Column(Text, nullable=True)
     user_stories = Column(Text, nullable=True)
-    data_model = Column(Text, nullable=True)
+    ux_design = Column(Text, nullable=True)
     system_architecture = Column(Text, nullable=True)
+    tech_stack = Column(Text, nullable=True)
     status = Column(String(50), default="draft", index=True)
     archived = Column(Boolean, default=False, index=True)
     ai_provider = Column(String(50), default="anthropic", nullable=False)  # anthropic, openai

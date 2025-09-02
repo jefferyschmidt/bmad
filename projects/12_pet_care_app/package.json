@@ -1,0 +1,28 @@
+{
+  "name": "pet-care-app",
+  "version": "1.0.0",
+  "description": "A mobile application for pet owners to manage their pets' feeding schedules and history",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "pg": "^8.9.0",
+    "react-native": "^0.71.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  },
+  "keywords": [
+    "pet-care",
+    "mobile-app",
+    "react-native",
+    "node.js",
+    "express",
+    "postgresql"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
