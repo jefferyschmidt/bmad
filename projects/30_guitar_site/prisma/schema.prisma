@@ -1,75 +1,70 @@
 ```prisma
 // schema.prisma
-generator client {
-  provider = "prisma-client-js"
-}
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-model Users {
-  UserID         Int       @id @default(autoincrement())
-  Username      String    @unique
-  Email         String    @unique
-  Password      String
-  ProfilePicture String?
-  Bio           String?
-  CreatedAt     DateTime  @default(now())
-  UpdatedAt     DateTime  @updatedAt
+generator client {
+  provider = "prisma-client-js"
+}
 
-  Guitars Guitars[]
-  Comments Comments[]
-  Likes Likes[]
-  Shares Shares[]
+model Users {
+  UserID        Int       @id @default(autoincrement())
+  Username     String    @unique @db.VarChar(255)
+  Email        String    @unique @db.VarChar(255)
+  Password     String    @db.VarChar(255)
+  ProfilePicture String?  @db.VarChar(255)
+  Bio          String?   @db.Text
+  CreatedAt    DateTime  @default(now())
+  UpdatedAt    DateTime  @default(now()) @updatedAt
+  Guitars      Guitars[]
+  Comments     Comments[]
+  Likes        Likes[]
+  Shares       Shares[]
 }
 
 model Guitars {
-  GuitarID    Int      @id @default(autoincrement())
-  UserID     Int
-  Brand      String
-  Model      String
-  Year       Int
-  Description String?
-  GuitarPhotos String[]
-  CreatedAt  DateTime @default(now())
-  UpdatedAt  DateTime @updatedAt
-
-  User Users @relation(fields: [UserID], references: [UserID])
-  Comments Comments[]
-  Likes Likes[]
-  Shares Shares[]
+  GuitarID     Int       @id @default(autoincrement())
+  UserID       Int
+  Brand        String    @db.VarChar(255)
+  Model        String    @db.VarChar(255)
+  Year         Int
+  Description  String    @db.Text
+  GuitarPhotos String[]  @db.Text
+  CreatedAt    DateTime  @default(now())
+  UpdatedAt    DateTime  @default(now()) @updatedAt
+  User         Users     @relation(fields: [UserID], references: [UserID])
+  Comments     Comments[]
+  Likes        Likes[]
+  Shares       Shares[]
 }
 
 model Comments {
   CommentID Int      @id @default(autoincrement())
   GuitarID  Int
   UserID    Int
-  CommentText String
+  Comment   String   @db.Text
   CreatedAt DateTime @default(now())
-
-  Guitar Guitars @relation(fields: [GuitarID], references: [GuitarID])
-  User Users @relation(fields: [UserID], references: [UserID])
+  Guitar    Guitars  @relation(fields: [GuitarID], references: [GuitarID])
+  User      Users    @relation(fields: [UserID], references: [UserID])
 }
 
 model Likes {
-  LikeID Int @id @default(autoincrement())
+  LikeID   Int      @id @default(autoincrement())
   GuitarID Int
-  UserID Int
+  UserID   Int
   CreatedAt DateTime @default(now())
-
-  Guitar Guitars @relation(fields: [GuitarID], references: [GuitarID])
-  User Users @relation(fields: [UserID], references: [UserID])
+  Guitar   Guitars  @relation(fields: [GuitarID], references: [GuitarID])
+  User     Users    @relation(fields: [UserID], references: [UserID])
 }
 
 model Shares {
-  ShareID Int @id @default(autoincrement())
+  ShareID  Int      @id @default(autoincrement())
   GuitarID Int
-  UserID Int
+  UserID   Int
   CreatedAt DateTime @default(now())
-
-  Guitar Guitars @relation(fields: [GuitarID], references: [GuitarID])
-  User Users @relation(fields: [UserID], references: [UserID])
+  Guitar   Guitars  @relation(fields: [GuitarID], references: [GuitarID])
+  User     Users    @relation(fields: [UserID], references: [UserID])
 }
 ```

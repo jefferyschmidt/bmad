@@ -1,75 +1,64 @@
-Here's a TypeScript API route that matches the system architecture requirements for the Guitar Site:
+Here's a TypeScript API route that matches the system architecture requirements:
 
 ```typescript
-// pages/api/guitars/[id].ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import { getSession } from 'next-auth/react';
+import { Guitar, GuitarInput, User, UserProfile } from '../types';
+import { createGuitar, getGuitarsByUser, getPublicProfiles, getUserProfile, updateGuitar } from '../services/guitar-service';
 
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { Guitar, GuitarData, GuitarUpdateData } from '../../types/guitar';
-import { getGuitarById, updateGuitarById, deleteGuitarById } from '../../services/guitarService';
-import { isAuthenticated } from '../../utils/auth';
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const session = await getSession({ req });
 
-type Data = Guitar | { message: string };
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<Data>
-) {
-  const { id } = req.query;
-
-  try {
-    switch (req.method) {
-      case 'GET':
-        const guitar = await getGuitarById(String(id));
-        res.status(200).json(guitar);
-        break;
-      case 'PUT':
-        if (!isAuthenticated(req)) {
-          res.status(401).json({ message: 'Unauthorized' });
-          return;
+  switch (req.method) {
+    case 'GET':
+      if (req.query.username) {
+        const username = Array.isArray(req.query.username) ? req.query.username[0] : req.query.username;
+        const userProfile = await getUserProfile(username);
+        if (!userProfile) {
+          return res.status(404).json({ error: 'User profile not found' });
         }
+        return res.status(200).json(userProfile);
+      } else {
+        const publicProfiles = await getPublicProfiles();
+        return res.status(200).json(publicProfiles);
+      }
 
-        const updatedData: GuitarUpdateData = req.body;
-        const updatedGuitar = await updateGuitarById(String(id), updatedData);
-        res.status(200).json(updatedGuitar);
-        break;
-      case 'DELETE':
-        if (!isAuthenticated(req)) {
-          res.status(401).json({ message: 'Unauthorized' });
-          return;
-        }
+    case 'POST':
+      if (!session) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
 
-        await deleteGuitarById(String(id));
-        res.status(204).end();
-        break;
-      default:
-        res.status(405).json({ message: 'Method Not Allowed' });
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+      const newGuitar: GuitarInput = req.body;
+      const createdGuitar = await createGuitar(session.user.id, newGuitar);
+      return res.status(201).json(createdGuitar);
+
+    case 'PATCH':
+      if (!session) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const guitarId = Array.isArray(req.query.id) ? req.query.id[0] : req.query.id;
+      const updatedGuitar = await updateGuitar(session.user.id, guitarId as string, req.body);
+      if (!updatedGuitar) {
+        return res.status(404).json({ error: 'Guitar not found' });
+      }
+      return res.status(200).json(updatedGuitar);
+
+    default:
+      return res.status(404).json({ error: 'Endpoint not found' });
   }
 }
 ```
 
-This API route handles CRUD operations for a specific guitar by its `id`. It uses the `getGuitarById`, `updateGuitarById`, and `deleteGuitarById` functions from the `guitarService` to interact with the database.
+This API route handles the following operations:
 
-The route also includes proper error handling, returning appropriate HTTP status codes and error messages. It also checks for authentication using the `isAuthenticated` function before allowing update and delete operations.
+- `GET /api/guitars`: Retrieves a list of public user profiles.
+- `GET /api/guitars?username=<username>`: Retrieves a specific user's public profile.
+- `POST /api/guitars`: Creates a new guitar post for the authenticated user.
+- `PATCH /api/guitars?id=<guitarId>`: Updates an existing guitar post for the authenticated user.
 
-The TypeScript types used in this API route are defined in the `types/guitar.ts` file, which would contain the following:
+The route uses the `getSession` function from `next-auth/react` to check if the user is authenticated and authorizes certain operations accordingly. It also includes proper error handling, returning appropriate HTTP status codes and error messages.
 
-```typescript
-export type Guitar = {
-  id: string;
-  userId: string;
-  brand: string;
-  model: string;
-  year: number;
-  description: string;
-  photos: string[];
-};
+The types used in this API route are defined in the `../types` module, which would contain the TypeScript interfaces for `Guitar`, `GuitarInput`, `User`, and `UserProfile`.
 
-export type GuitarData = Omit<Guitar, 'id'>;
-export type GuitarUpdateData = Partial<GuitarData>;
-```
-
-This ensures that the API route is type-safe and follows the system architecture requirements.
+The implementation of the `guitar-service` functions (`createGuitar`, `getGuitarsByUser`, `getPublicProfiles`, `getUserProfile`, `updateGuitar`) is not included here, as it would depend on the specific implementation details of your application.

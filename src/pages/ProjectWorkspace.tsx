@@ -250,7 +250,6 @@ const ProjectWorkspace: React.FC = () => {
       if (result.success) {
         // Project generation completed successfully
         setGenerationResult(result);
-        await fetchProject();
         setSuccess('Project generated successfully! Check the projects folder for your generated code.');
       } else {
         // Project generation failed - show the error message

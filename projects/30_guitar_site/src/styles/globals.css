@@ -3,6 +3,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom Styles */
+
+/* Color Palette */
 :root {
   --color-primary: #2C3E50;
   --color-secondary: #34495E;
@@ -11,62 +14,84 @@
   --color-neutral-white: #FFFFFF;
 }
 
+/* Typography */
 body {
   font-family: 'Lato', sans-serif;
+  font-size: 16px;
   color: var(--color-secondary);
-  background-color: var(--color-neutral-light);
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Roboto', sans-serif;
+  font-weight: 700;
   color: var(--color-primary);
 }
 
 h1 { font-size: 48px; }
 h2 { font-size: 36px; }
-h3 { font-size: 28px; }
-h4 { font-size: 24px; }
-h5 { font-size: 20px; }
+h3 { font-size: 24px; }
+h4 { font-size: 20px; }
+h5 { font-size: 18px; }
 h6 { font-size: 16px; }
 
-p, span, div {
-  font-size: 16px;
-  line-height: 1.5;
+/* Buttons */
+.btn {
+  @apply font-medium py-2 px-4 rounded-md transition-colors;
 }
 
 .btn-primary {
-  @apply bg-accent-500 text-white font-medium py-2 px-4 rounded-md hover:bg-accent-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500;
+  @apply bg-accent-500 text-white hover:bg-accent-600;
 }
 
 .btn-secondary {
-  @apply bg-transparent text-accent-500 font-medium py-2 px-4 rounded-md hover:bg-accent-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500;
+  @apply bg-neutral-light text-primary-600 hover:bg-neutral-400;
 }
 
 .btn-tertiary {
-  @apply text-secondary-500 font-medium py-2 px-4 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary-500;
+  @apply text-primary-600 hover:text-primary-800;
 }
 
+/* Cards */
 .card {
-  @apply bg-white rounded-lg shadow-md overflow-hidden;
+  @apply bg-white shadow-md rounded-md overflow-hidden;
 }
 
 .card-header {
-  @apply bg-primary-500 text-white py-3 px-4 font-medium;
+  @apply bg-primary-500 text-white py-3 px-4;
 }
 
 .card-body {
   @apply p-4;
 }
 
-.form-input {
-  @apply bg-white border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500;
+/* Navigation */
+.nav {
+  @apply bg-primary-500 text-white py-4 px-6;
 }
 
-.form-label {
-  @apply block text-secondary-500 font-medium mb-2;
+.nav-link {
+  @apply text-lg font-medium px-4 py-2 rounded-md hover:bg-primary-600;
 }
 
-.loader {
-  @apply border-4 border-primary-500 border-t-transparent rounded-full animate-spin;
+/* Explore Page */
+.explore-filters {
+  @apply bg-neutral-light p-4 rounded-md mb-6;
+}
+
+.explore-grid {
+  @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6;
+}
+
+/* Guitar Post Details */
+.guitar-hero {
+  @apply bg-primary-500 text-white py-12 px-6;
+}
+
+.guitar-details {
+  @apply p-6;
+}
+
+.guitar-comments {
+  @apply bg-neutral-light p-6 rounded-md;
 }
 ```
