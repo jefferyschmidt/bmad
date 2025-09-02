@@ -32,6 +32,7 @@ import {
 } from '@mui/material';
 import { ArrowBack, Edit, Psychology, Archive, Unarchive, Refresh } from '@mui/icons-material';
 import { Project, AIProvider } from '../types/project';
+import { APPLICATION_TYPES, ApplicationType, TechStack } from '../constants/applicationTypes';
 
 const ProjectWorkspace: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -50,9 +51,15 @@ const ProjectWorkspace: React.FC = () => {
     name: '',
     description: '',
     requirements: '',
+    application_type: '',
     ai_provider: ''
   });
   const [activeStage, setActiveStage] = useState('requirements'); // 'requirements', 'data-model', 'architecture', 'project'
+
+  // Helper functions for application type
+  const getSelectedApplicationType = (): ApplicationType | undefined => {
+    return APPLICATION_TYPES.find(type => type.id === editForm.application_type);
+  };
 
   const fetchProject = useCallback(async () => {
     if (!id) return;
@@ -67,6 +74,7 @@ const ProjectWorkspace: React.FC = () => {
         name: data.name,
         description: data.description || '',
         requirements: data.requirements,
+        application_type: data.application_type || '',
         ai_provider: data.ai_provider
       });
     } catch (err) {
@@ -768,6 +776,25 @@ const ProjectWorkspace: React.FC = () => {
                     multiline
                     rows={6}
                   />
+                  <FormControl fullWidth>
+                    <InputLabel>Application Type</InputLabel>
+                    <Select
+                      value={editForm.application_type}
+                      label="Application Type"
+                      onChange={(e) => setEditForm({ ...editForm, application_type: e.target.value })}
+                    >
+                      {APPLICATION_TYPES.map((type) => (
+                        <MenuItem key={type.id} value={type.id}>
+                          <Box>
+                            <Typography variant="body1">{type.name}</Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {type.description}
+                            </Typography>
+                          </Box>
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                   <FormControl fullWidth>
                     <InputLabel>AI Provider</InputLabel>
                     <Select

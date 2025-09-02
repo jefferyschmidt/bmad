@@ -11,14 +11,16 @@ import {
   Select,
   MenuItem,
   Box,
-  Typography
+  Typography,
+  FormHelperText
 } from '@mui/material';
 import { Project, AIProvider } from '../types/project';
+import { APPLICATION_TYPES, ApplicationType, TechStack } from '../constants/applicationTypes';
 
 interface NewProjectProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (project: Omit<Project, 'id' | 'created_at' | 'updated_at' | 'status' | 'archived' | 'refined_requirements' | 'user_stories' | 'data_model' | 'system_architecture'>) => void;
+  onSubmit: (project: Omit<Project, 'id' | 'created_at' | 'updated_at' | 'status' | 'archived' | 'refined_requirements' | 'user_stories' | 'data_model' | 'system_architecture' | 'tech_stack_id'>) => void;
   aiProviders: AIProvider[];
 }
 
@@ -26,10 +28,16 @@ const NewProject: React.FC<NewProjectProps> = ({ open, onClose, onSubmit, aiProv
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [requirements, setRequirements] = useState('');
+  const [applicationType, setApplicationType] = useState('');
   const [aiProvider, setAiProvider] = useState('anthropic');
 
+  // Helper functions
+  const getSelectedApplicationType = (): ApplicationType | undefined => {
+    return APPLICATION_TYPES.find(type => type.id === applicationType);
+  };
+
   const handleSubmit = () => {
-    if (!name.trim() || !requirements.trim()) {
+    if (!name.trim() || !requirements.trim() || !applicationType) {
       return;
     }
 
@@ -37,6 +45,7 @@ const NewProject: React.FC<NewProjectProps> = ({ open, onClose, onSubmit, aiProv
       name: name.trim(),
       description: description.trim(),
       requirements: requirements.trim(),
+      application_type: applicationType,
       ai_provider: aiProvider
     });
 
@@ -44,6 +53,7 @@ const NewProject: React.FC<NewProjectProps> = ({ open, onClose, onSubmit, aiProv
     setName('');
     setDescription('');
     setRequirements('');
+    setApplicationType('');
     setAiProvider('anthropic');
     onClose();
   };
@@ -53,6 +63,7 @@ const NewProject: React.FC<NewProjectProps> = ({ open, onClose, onSubmit, aiProv
     setName('');
     setDescription('');
     setRequirements('');
+    setApplicationType('');
     setAiProvider('anthropic');
     onClose();
   };
@@ -93,6 +104,29 @@ const NewProject: React.FC<NewProjectProps> = ({ open, onClose, onSubmit, aiProv
             helperText="The AI Requirements Analyst will analyze these requirements and generate refined specifications and user stories."
           />
           
+          <FormControl fullWidth required>
+            <InputLabel>Application Type</InputLabel>
+            <Select
+              value={applicationType}
+              label="Application Type"
+              onChange={(e) => setApplicationType(e.target.value)}
+            >
+              {APPLICATION_TYPES.map((type) => (
+                <MenuItem key={type.id} value={type.id}>
+                  <Box>
+                    <Typography variant="body1">{type.name}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {type.description}
+                    </Typography>
+                  </Box>
+                </MenuItem>
+              ))}
+            </Select>
+            <FormHelperText>
+              Choose the type of application you want to build. The AI will select the best technology stack for your requirements.
+            </FormHelperText>
+          </FormControl>
+          
           <FormControl fullWidth>
             <InputLabel>AI Provider</InputLabel>
             <Select
@@ -122,7 +156,7 @@ const NewProject: React.FC<NewProjectProps> = ({ open, onClose, onSubmit, aiProv
         <Button 
           onClick={handleSubmit} 
           variant="contained" 
-          disabled={!name.trim() || !requirements.trim()}
+          disabled={!name.trim() || !requirements.trim() || !applicationType}
         >
           Create Project
         </Button>

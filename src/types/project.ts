@@ -6,6 +6,8 @@ export interface Project {
   refined_requirements?: string;
   ux_design?: string;
   system_architecture?: string;
+  application_type?: string;
+  tech_stack_id?: string;
   status: string;
   archived: boolean;
   ai_provider: string;

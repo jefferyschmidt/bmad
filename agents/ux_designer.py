@@ -84,6 +84,7 @@ class UXDesignerAgent:
         requirements: str,
         refined_requirements: str,
         system_architecture: str,
+        application_type: str,
         ai_provider: str,
         db_session
     ) -> Dict[str, Any]:
@@ -95,6 +96,7 @@ class UXDesignerAgent:
             requirements: Original user requirements
             refined_requirements: Analyzed and refined requirements
             system_architecture: System architecture specifications
+            application_type: Type of application (static_website, web_application, mobile_app, etc.)
             ai_provider: AI provider to use (anthropic, openai)
             db_session: Database session for AI provider config
             
@@ -115,6 +117,7 @@ class UXDesignerAgent:
                 ORIGINAL REQUIREMENTS: {requirements}
                 REFINED REQUIREMENTS: {refined_requirements}
                 SYSTEM ARCHITECTURE: {system_architecture}
+                APPLICATION TYPE: {application_type or 'Not specified'}
                 
                 TASK: Create comprehensive UX/UI design specifications for this project.
                 
@@ -126,6 +129,13 @@ class UXDesignerAgent:
                 - Interaction design
                 - Accessibility guidelines
                 - Implementation notes
+                
+                IMPORTANT: Consider the application type when creating the design:
+                - Static Website: Focus on content presentation, navigation, and visual hierarchy
+                - Web Application: Emphasize user workflows, data visualization, and interactive elements
+                - Mobile App: Consider touch interactions, mobile navigation patterns, and device-specific features
+                - Automation Script: Focus on command-line interfaces, progress indicators, and error handling
+                - Desktop Application: Consider desktop UI patterns, window management, and platform integration
                 
                 Be specific and actionable. Developers should be able to implement your design directly.
                 Focus on creating an excellent user experience that aligns with the project requirements.

@@ -191,13 +191,14 @@ class RequirementsAnalystAgent:
     """
     
     @staticmethod
-    async def analyze_requirements(project_name: str, requirements: str, ai_provider: str = "anthropic", db_session=None) -> Dict[str, Any]:
+    async def analyze_requirements(project_name: str, requirements: str, application_type: str, ai_provider: str = "anthropic", db_session=None) -> Dict[str, Any]:
         """
         Analyze project requirements using the AI persona and framework.
         
         Args:
             project_name: Name of the project
             requirements: Raw requirements text from user
+            application_type: Type of application (static_website, web_application, mobile_app, etc.)
             ai_provider: Which AI service to use (from database)
             db_session: Database session to fetch API keys
             
@@ -206,15 +207,15 @@ class RequirementsAnalystAgent:
         """
         
         # First, analyze the input to understand what we're building
-        project_context = await RequirementsAnalystAgent._analyze_project_context(requirements, ai_provider, db_session)
+        project_context = await RequirementsAnalystAgent._analyze_project_context(requirements, application_type, ai_provider, db_session)
         
         # Apply the analysis framework to the requirements
         refined_requirements = await RequirementsAnalystAgent._generate_refined_requirements(
-            project_name, requirements, project_context, ai_provider, db_session
+            project_name, requirements, application_type, project_context, ai_provider, db_session
         )
         
         user_stories = await RequirementsAnalystAgent._generate_user_stories(
-            project_name, requirements, project_context, ai_provider, db_session
+            project_name, requirements, application_type, project_context, ai_provider, db_session
         )
         
         return {
@@ -230,13 +231,13 @@ class RequirementsAnalystAgent:
         }
 
     @staticmethod
-    async def _analyze_project_context(requirements: str, ai_provider: str, db_session) -> Dict[str, Any]:
+    async def _analyze_project_context(requirements: str, application_type: str, ai_provider: str, db_session) -> Dict[str, Any]:
         """
         Use AI persona to intelligently analyze the project context.
         The AI should determine project type, domain, and characteristics based on the requirements.
         """
         # First, validate that requirements are sufficient for analysis using AI
-        is_sufficient, guidance_questions = await RequirementsAnalystAgent._validate_requirements_ai(requirements, ai_provider, db_session)
+        is_sufficient, guidance_questions = await RequirementsAnalystAgent._validate_requirements_ai(requirements, application_type, ai_provider, db_session)
         
         if not is_sufficient:
             raise ValueError(
@@ -262,13 +263,26 @@ class RequirementsAnalystAgent:
         """
         
         response = await RequirementsAnalystAgent._call_ai_service(prompt, ai_provider, db_session)
+        
+        # Clean the response to extract JSON
+        response = response.strip()
+        
+        # Try to find JSON in the response (in case there's extra text)
+        json_start = response.find('{')
+        json_end = response.rfind('}') + 1
+        
+        if json_start != -1 and json_end > json_start:
+            json_str = response[json_start:json_end]
+        else:
+            json_str = response
+        
         try:
-            return json.loads(response)
-        except json.JSONDecodeError:
-            raise ValueError(f"AI context analysis did not return valid JSON. Raw response: {response}")
+            return json.loads(json_str)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"AI context analysis did not return valid JSON. Raw response: {response}. JSON parsing error: {str(e)}")
     
     @staticmethod
-    async def _validate_requirements_ai(requirements: str, ai_provider: str, db_session) -> tuple[bool, str]:
+    async def _validate_requirements_ai(requirements: str, application_type: str, ai_provider: str, db_session) -> tuple[bool, str]:
         """
         Use AI to intelligently validate whether requirements contain sufficient information for analysis.
         Returns a tuple of (is_sufficient, guidance_questions).
@@ -282,11 +296,19 @@ class RequirementsAnalystAgent:
         
         TASK: Determine if the following requirements contain enough information to begin requirements analysis.
         
-        EVALUATION CRITERIA:
+        APPLICATION TYPE: {application_type}
+        
+        EVALUATION CRITERIA (considering the application type):
         - Requirements should describe a specific problem or need (even if simple)
         - Requirements should indicate who the users are OR allow reasonable inference from context
         - Requirements should suggest what functionality is needed (even if basic)
         - Requirements should have enough detail to understand the project scope (even if it's a simple project)
+        - Consider application type specific needs:
+          * Static Website: Content, pages, design preferences
+          * Web Application: User interactions, data management, authentication needs
+          * Mobile App: Touch interactions, device features, offline capabilities
+          * Automation Script: Input/output, error handling, scheduling needs
+          * Desktop Application: Platform requirements, user interface preferences
         
         IMPORTANT: Be reasonable and practical. Simple projects like "a website with pictures" or "a basic calculator app" 
         are perfectly valid and sufficient for analysis. Don't require enterprise-level detail for simple projects.
@@ -311,7 +333,20 @@ class RequirementsAnalystAgent:
         
         try:
             response = await RequirementsAnalystAgent._call_ai_service(prompt, ai_provider, db_session)
-            validation_result = json.loads(response)
+            
+            # Clean the response to extract JSON
+            response = response.strip()
+            
+            # Try to find JSON in the response (in case there's extra text)
+            json_start = response.find('{')
+            json_end = response.rfind('}') + 1
+            
+            if json_start != -1 and json_end > json_start:
+                json_str = response[json_start:json_end]
+            else:
+                json_str = response
+            
+            validation_result = json.loads(json_str)
             
             if "sufficient" in validation_result:
                 guidance = validation_result.get("guidance", "")
@@ -336,7 +371,7 @@ class RequirementsAnalystAgent:
         return True
 
     @staticmethod
-    async def _generate_refined_requirements(project_name: str, requirements: str, context: Dict[str, Any], ai_provider: str, db_session) -> str:
+    async def _generate_refined_requirements(project_name: str, requirements: str, application_type: str, context: Dict[str, Any], ai_provider: str, db_session) -> str:
         """
         Generate refined requirements using the AI persona and intelligent analysis.
         """
@@ -346,10 +381,19 @@ class RequirementsAnalystAgent:
         Generate refined requirements for the project "{project_name}" based on these requirements:
         {requirements}
         
+        APPLICATION TYPE: {application_type}
+        
         Context: {json.dumps(context)}
         
         Generate comprehensive, professional requirements that follow the framework in the instructions.
         Focus on what the user actually needs, not generic boilerplate.
+        
+        IMPORTANT: Consider the application type when refining requirements:
+        - Static Website: Focus on content structure, navigation, and presentation
+        - Web Application: Emphasize user interactions, data management, and business logic
+        - Mobile App: Consider touch interactions, device features, and mobile-specific UX
+        - Automation Script: Focus on input/output, error handling, and execution flow
+        - Desktop Application: Consider platform integration and desktop-specific features
         """
         
         response = await RequirementsAnalystAgent._call_ai_service(prompt, ai_provider, db_session)
@@ -358,7 +402,7 @@ class RequirementsAnalystAgent:
         return response
 
     @staticmethod
-    async def _generate_user_stories(project_name: str, requirements: str, context: Dict[str, Any], ai_provider: str, db_session) -> List[Dict[str, Any]]:
+    async def _generate_user_stories(project_name: str, requirements: str, application_type: str, context: Dict[str, Any], ai_provider: str, db_session) -> List[Dict[str, Any]]:
         """
         Generate intelligent user stories using the AI persona framework.
         """
@@ -367,6 +411,8 @@ class RequirementsAnalystAgent:
         
         Generate user stories for the project "{project_name}" based on these requirements:
         {requirements}
+        
+        APPLICATION TYPE: {application_type}
         
         Context: {json.dumps(context)}
         
@@ -385,14 +431,35 @@ class RequirementsAnalystAgent:
         
         Focus on the user's goals and the actual problem being solved.
         Generate as many user stories as needed to cover the requirements - don't limit yourself to an arbitrary number.
+        
+        IMPORTANT: Consider the application type when creating user stories:
+        - Static Website: Focus on content consumption, navigation, and information access
+        - Web Application: Emphasize user interactions, data management, and workflow processes
+        - Mobile App: Consider touch interactions, device features, offline capabilities, and mobile UX patterns
+        - Automation Script: Focus on input processing, output generation, and error handling workflows
+        - Desktop Application: Consider platform integration, file management, and desktop-specific interactions
+        
         Respond with only valid JSON, no other text.
         """
         
         response = await RequirementsAnalystAgent._call_ai_service(prompt, ai_provider, db_session)
+        
+        # Clean the response to extract JSON
+        response = response.strip()
+        
+        # Try to find JSON in the response (in case there's extra text)
+        json_start = response.find('[')
+        json_end = response.rfind(']') + 1
+        
+        if json_start != -1 and json_end > json_start:
+            json_str = response[json_start:json_end]
+        else:
+            json_str = response
+        
         try:
-            return json.loads(response)
-        except json.JSONDecodeError:
-            raise ValueError(f"AI response was not valid JSON: {response}")
+            return json.loads(json_str)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"AI response was not valid JSON: {response}. JSON parsing error: {str(e)}")
 
     @staticmethod
     async def _call_ai_service(prompt: str, ai_provider: str, db_session) -> str:

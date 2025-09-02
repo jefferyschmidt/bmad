@@ -7,6 +7,12 @@ This agent generates working software based on project requirements and architec
 from typing import Dict, Any, List
 import json
 from pathlib import Path
+import sys
+import os
+
+# Add the constants directory to the path
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'constants'))
+from application_types import APPLICATION_TYPES, get_tech_stacks_for_application_type
 
 class FullStackDeveloperAgent:
     """
@@ -20,6 +26,7 @@ class FullStackDeveloperAgent:
         refined_requirements: str,
         system_architecture: str,
         ux_design: str,
+        application_type: str,
         ai_provider: str,
         db_session,
         project_id: int
@@ -37,7 +44,7 @@ class FullStackDeveloperAgent:
             # Step 2: Analyze requirements and determine optimal tech stack
             tech_stack_analysis = await FullStackDeveloperAgent._analyze_tech_stack(
                 project_name, requirements, refined_requirements, data_model, system_architecture,
-                ai_provider, db_session
+                application_type, ai_provider, db_session
             )
             
             # Step 2: Generate project structure and code
@@ -82,49 +89,59 @@ class FullStackDeveloperAgent:
         refined_requirements: str,
         data_model: str,
         system_architecture: str,
+        application_type: str,
         ai_provider: str,
         db_session
     ) -> Dict[str, Any]:
         """
-        Use AI to analyze requirements and determine the optimal tech stack.
+        Use AI to choose the optimal tech stack from predefined options based on application type.
         """
         try:
-            # Use the same AI service pattern as other agents
+            # Get available tech stacks for the application type
+            available_tech_stacks = get_tech_stacks_for_application_type(application_type)
+            
+            if not available_tech_stacks:
+                raise ValueError(f"No tech stacks available for application type: {application_type}")
+            
+            # Create a formatted list of available tech stacks for the AI
+            tech_stack_options = []
+            for i, stack in enumerate(available_tech_stacks):
+                tech_stack_options.append(f"""
+                Option {i + 1}: {stack['name']} (ID: {stack['id']})
+                Description: {stack['description']}
+                Frontend: {stack['frontend']['name']} ({stack['frontend']['language']})
+                Backend: {stack['backend']['name']} ({stack['backend']['language']})
+                Database: {stack['database']['name']} ({stack['database']['type']})
+                Deployment: {stack['deployment']['name']} ({stack['deployment']['platform']})
+                """)
+            
+            tech_stack_list = "\n".join(tech_stack_options)
+            
+            # Use AI to choose the best tech stack from the available options
             ai_response = await FullStackDeveloperAgent._call_ai_service(
                 prompt=f"""
-                You are a senior full stack developer. Analyze this project and determine the optimal tech stack.
+                You are a senior full stack developer. Analyze this project and choose the optimal tech stack from the predefined options.
                 
                 PROJECT: {project_name}
                 REQUIREMENTS: {requirements}
                 REFINED REQUIREMENTS: {refined_requirements}
                 DATA MODEL: {data_model}
                 SYSTEM ARCHITECTURE: {system_architecture}
+                APPLICATION TYPE: {application_type}
+                
+                AVAILABLE TECH STACK OPTIONS:
+                {tech_stack_list}
                 
                 CRITICAL: You must return ONLY valid JSON. No explanations, no markdown, no additional text.
                 
-                TASK: Determine the optimal tech stack. Return ONLY a JSON response with this exact structure:
+                TASK: Choose the best tech stack option and return ONLY a JSON response with this exact structure:
                 {{
-                    "project_type": "web_app",
-                    "tech_stack_reasoning": "explanation",
-                    "frontend": {{
-                        "framework": "React.js",
-                        "language": "JavaScript",
-                        "styling": "CSS-in-JS"
-                    }},
-                    "backend": {{
-                        "language": "Node.js",
-                        "framework": "Express.js"
-                    }},
-                    "database": {{
-                        "type": "PostgreSQL"
-                    }},
-                    "deployment": {{
-                        "platform": "Cloud",
-                        "containerization": "Docker"
-                    }}
+                    "selected_tech_stack_id": "tech_stack_id_from_options",
+                    "tech_stack_reasoning": "brief explanation of why this option was chosen",
+                    "project_type": "{application_type}"
                 }}
                 
-                Choose practical, production-ready technologies that match the project requirements.
+                Choose the tech stack that best matches the project requirements and complexity.
                 Remember: ONLY JSON, nothing else.
                 """,
                 ai_provider=ai_provider,
@@ -134,56 +151,113 @@ class FullStackDeveloperAgent:
             if not ai_response:
                 raise ValueError("AI response was empty")
             
-
-            
-            # Parse the JSON response with fallback logic
+            # Parse the AI response to get the selected tech stack ID
             try:
-                # Try to parse the response directly
-                tech_stack = json.loads(ai_response)
-                return tech_stack
+                ai_choice = json.loads(ai_response)
+                selected_id = ai_choice.get("selected_tech_stack_id")
+                reasoning = ai_choice.get("tech_stack_reasoning", "AI selected based on requirements")
+                
+                if not selected_id:
+                    raise ValueError("AI response missing selected_tech_stack_id")
+                
+                # Find the selected tech stack
+                selected_tech_stack = None
+                for stack in available_tech_stacks:
+                    if stack["id"] == selected_id:
+                        selected_tech_stack = stack
+                        break
+                
+                if not selected_tech_stack:
+                    raise ValueError(f"Selected tech stack ID '{selected_id}' not found in available options")
+                
+                # Return the selected tech stack with AI reasoning
+                return {
+                    "project_type": application_type,
+                    "tech_stack_reasoning": reasoning,
+                    "selected_tech_stack_id": selected_id,
+                    "frontend": selected_tech_stack["frontend"],
+                    "backend": selected_tech_stack["backend"],
+                    "database": selected_tech_stack["database"],
+                    "deployment": selected_tech_stack["deployment"]
+                }
+                
             except json.JSONDecodeError as e:
                 print(f"JSON parsing failed: {e}")
                 print(f"Full AI response: {ai_response}")
                 
                 # Try to extract JSON from the response if it contains extra text
                 try:
-                    # Look for JSON-like content between curly braces
                     start = ai_response.find('{')
                     end = ai_response.rfind('}') + 1
                     if start != -1 and end != 0:
                         json_content = ai_response[start:end]
-                        tech_stack = json.loads(json_content)
-                        print(f"Successfully extracted JSON from response")
-                        return tech_stack
-                except json.JSONDecodeError as extract_error:
-                    print(f"JSON extraction also failed: {extract_error}")
+                        ai_choice = json.loads(json_content)
+                        selected_id = ai_choice.get("selected_tech_stack_id")
+                        reasoning = ai_choice.get("tech_stack_reasoning", "AI selected based on requirements")
+                        
+                        if selected_id:
+                            # Find the selected tech stack
+                            selected_tech_stack = None
+                            for stack in available_tech_stacks:
+                                if stack["id"] == selected_id:
+                                    selected_tech_stack = stack
+                                    break
+                            
+                            if selected_tech_stack:
+                                return {
+                                    "project_type": application_type,
+                                    "tech_stack_reasoning": reasoning,
+                                    "selected_tech_stack_id": selected_id,
+                                    "frontend": selected_tech_stack["frontend"],
+                                    "backend": selected_tech_stack["backend"],
+                                    "database": selected_tech_stack["database"],
+                                    "deployment": selected_tech_stack["deployment"]
+                                }
+                except json.JSONDecodeError:
+                    pass
                 
-                # If all parsing attempts fail, provide a fallback tech stack
+                # If all parsing attempts fail, use the first available tech stack as fallback
                 print("Using fallback tech stack due to JSON parsing failure")
+                fallback_stack = available_tech_stacks[0]
                 return {
-                    "project_type": "web_app",
+                    "project_type": application_type,
                     "tech_stack_reasoning": "Fallback due to AI response parsing failure",
-                    "frontend": {
-                        "framework": "HTML/CSS",
-                        "language": "HTML",
-                        "styling": "CSS"
-                    },
-                    "backend": {
-                        "language": "None",
-                        "framework": "None"
-                    },
-                    "database": {
-                        "type": "None"
-                    },
-                    "deployment": {
-                        "platform": "Static Hosting",
-                        "containerization": "None"
-                    }
+                    "selected_tech_stack_id": fallback_stack["id"],
+                    "frontend": fallback_stack["frontend"],
+                    "backend": fallback_stack["backend"],
+                    "database": fallback_stack["database"],
+                    "deployment": fallback_stack["deployment"]
                 }
                 
         except Exception as e:
-            # If AI fails, raise an error - no fallback to hardcoded defaults
-            raise RuntimeError(f"AI tech stack analysis failed: {str(e)}. Please retry or check your AI provider configuration.")
+            print(f"Error in _analyze_tech_stack: {e}")
+            # Return the first available tech stack as fallback
+            try:
+                available_tech_stacks = get_tech_stacks_for_application_type(application_type)
+                if available_tech_stacks:
+                    fallback_stack = available_tech_stacks[0]
+                    return {
+                        "project_type": application_type,
+                        "tech_stack_reasoning": f"Error occurred: {str(e)}",
+                        "selected_tech_stack_id": fallback_stack["id"],
+                        "frontend": fallback_stack["frontend"],
+                        "backend": fallback_stack["backend"],
+                        "database": fallback_stack["database"],
+                        "deployment": fallback_stack["deployment"]
+                    }
+            except:
+                pass
+            
+            # Ultimate fallback
+            return {
+                "project_type": application_type,
+                "tech_stack_reasoning": f"Error occurred: {str(e)}",
+                "selected_tech_stack_id": "html_css_js",
+                "frontend": {"name": "HTML/CSS/JS", "language": "HTML", "framework": "None", "styling": "CSS"},
+                "backend": {"name": "None", "language": "None", "framework": "None"},
+                "database": {"name": "None", "type": "None"},
+                "deployment": {"name": "Static Hosting", "platform": "Static Hosting", "containerization": "None"}
+            }
     
     @staticmethod
     async def _generate_data_model(

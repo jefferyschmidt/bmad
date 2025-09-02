@@ -35,12 +35,14 @@ class ProjectCreate(BaseModel):
     name: str
     description: Optional[str] = None
     requirements: str
+    application_type: Optional[str] = None
     ai_provider: str = "anthropic"  # anthropic, openai
 
 class ProjectUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     requirements: Optional[str] = None
+    application_type: Optional[str] = None
     ai_provider: Optional[str] = None
 
 class ProjectResponse(BaseModel):
@@ -52,6 +54,7 @@ class ProjectResponse(BaseModel):
     user_stories: Optional[str] = None
     ux_design: Optional[str] = None
     system_architecture: Optional[str] = None
+    application_type: Optional[str] = None
     tech_stack: Optional[str] = None
     status: str
     archived: bool

@@ -119,6 +119,7 @@ class ProjectService:
             result = await RequirementsAnalystAgent.analyze_requirements(
                 project_name=project.name,
                 requirements=project.requirements,
+                application_type=project.application_type or "web_application",  # Default fallback
                 ai_provider=project.ai_provider,
                 db_session=db
             )
@@ -160,6 +161,7 @@ class ProjectService:
                 requirements=project.requirements,
                 refined_requirements=project.refined_requirements,
                 system_architecture=project.system_architecture,
+                application_type=project.application_type or "web_application",  # Default fallback
                 ai_provider=project.ai_provider,
                 db_session=db
             )
@@ -198,6 +200,7 @@ class ProjectService:
                 project_name=project.name,
                 requirements=project.requirements,
                 refined_requirements=project.refined_requirements,
+                application_type=project.application_type or "web_application",  # Default fallback
                 ai_provider=project.ai_provider,
                 db_session=db
             )
@@ -245,6 +248,7 @@ class ProjectService:
                 refined_requirements=project.refined_requirements,
                 system_architecture=project.system_architecture,
                 ux_design=project.ux_design,
+                application_type=project.application_type or "web_application",  # Default fallback
                 ai_provider=project.ai_provider,
                 db_session=db,
                 project_id=project.id

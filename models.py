@@ -34,6 +34,8 @@ class Project(Base):
     user_stories = Column(Text, nullable=True)
     ux_design = Column(Text, nullable=True)
     system_architecture = Column(Text, nullable=True)
+    application_type = Column(String(50), nullable=True)
+    tech_stack_id = Column(String(50), nullable=True)
     tech_stack = Column(Text, nullable=True)
     status = Column(String(50), default="draft", index=True)
     archived = Column(Boolean, default=False, index=True)

@@ -76,7 +76,7 @@ class SoftwareArchitectAgent:
     """
     
     @staticmethod
-    async def analyze_requirements(project_name: str, requirements: str, refined_requirements: str = None, data_model: str = None, ai_provider: str = None, db_session = None) -> Dict[str, Any]:
+    async def analyze_requirements(project_name: str, requirements: str, refined_requirements: str = None, data_model: str = None, application_type: str = None, ai_provider: str = None, db_session = None) -> Dict[str, Any]:
         """
         Analyze project requirements and data model to design system architecture.
         
@@ -85,6 +85,7 @@ class SoftwareArchitectAgent:
             requirements: Raw requirements text from user
             refined_requirements: Refined requirements from RA (optional)
             data_model: Database schema from Data Modeler (optional)
+            application_type: Type of application (static_website, web_application, mobile_app, etc.)
             ai_provider: AI provider to use for analysis
             db_session: Database session for AI provider factory
             
@@ -93,11 +94,11 @@ class SoftwareArchitectAgent:
         """
         
         # Analyze the input to understand what we're building
-        project_context = await SoftwareArchitectAgent._analyze_project_context(requirements, refined_requirements, data_model, ai_provider, db_session)
+        project_context = await SoftwareArchitectAgent._analyze_project_context(requirements, refined_requirements, data_model, application_type, ai_provider, db_session)
         
         # Generate domain-specific architecture based on context
         system_architecture = await SoftwareArchitectAgent._generate_system_architecture(
-            project_name, requirements, refined_requirements, data_model, project_context, ai_provider, db_session
+            project_name, requirements, refined_requirements, data_model, application_type, project_context, ai_provider, db_session
         )
         
         return {
@@ -111,7 +112,7 @@ class SoftwareArchitectAgent:
         }
     
     @staticmethod
-    async def _analyze_project_context(requirements: str, refined_requirements: str = None, data_model: str = None, ai_provider: str = None, db_session = None) -> Dict[str, Any]:
+    async def _analyze_project_context(requirements: str, refined_requirements: str = None, data_model: str = None, application_type: str = None, ai_provider: str = None, db_session = None) -> Dict[str, Any]:
         """
         Use AI to intelligently analyze the project context to understand architectural needs.
         """
@@ -128,6 +129,8 @@ class SoftwareArchitectAgent:
                 Refined Requirements: {refined_requirements or 'Not provided'}
                 
                 Data Model: {data_model or 'Not provided'}
+                
+                Application Type: {application_type or 'Not specified'}
                 
                 TASK: Analyze this project and provide a JSON response with the following structure:
                 {{
@@ -174,7 +177,7 @@ class SoftwareArchitectAgent:
             }
     
     @staticmethod
-    async def _generate_system_architecture(project_name: str, requirements: str, refined_requirements: str, data_model: str, context: Dict[str, Any], ai_provider: str = None, db_session = None) -> str:
+    async def _generate_system_architecture(project_name: str, requirements: str, refined_requirements: str, data_model: str, application_type: str, context: Dict[str, Any], ai_provider: str = None, db_session = None) -> str:
         """
         Use AI to generate system architecture based on project context and requirements.
         """
@@ -190,6 +193,7 @@ class SoftwareArchitectAgent:
                 Project Requirements: {requirements}
                 Refined Requirements: {refined_requirements or 'Not provided'}
                 Data Model: {data_model or 'Not provided'}
+                Application Type: {application_type or 'Not specified'}
                 Project Context: {json.dumps(context, indent=2)}
                 
                 TASK: Generate a comprehensive system architecture document. Include:
@@ -204,6 +208,13 @@ class SoftwareArchitectAgent:
                 8. DEPLOYMENT ARCHITECTURE: How the system will be deployed
                 9. IMPLEMENTATION PLAN: Development phases and priorities
                 10. TECHNICAL CONSIDERATIONS: Performance, scalability, monitoring
+                
+                IMPORTANT: Consider the application type when designing the architecture:
+                - Static Website: Focus on content delivery, CDN, and simple hosting
+                - Web Application: Emphasize server-side architecture, APIs, and database design
+                - Mobile App: Consider mobile-specific patterns, offline capabilities, and device integration
+                - Automation Script: Focus on execution environment, input/output handling, and scheduling
+                - Desktop Application: Consider platform integration, local storage, and desktop-specific features
                 
                 Format the response as a well-structured markdown document with clear sections and subsections.
                 Focus on practical, implementable architecture that follows modern best practices.

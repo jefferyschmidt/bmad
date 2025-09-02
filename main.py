@@ -87,14 +87,15 @@ async def get_projects(db: AsyncSession = Depends(get_db)):
                 requirements=row[3],
                 refined_requirements=row[4],
                 user_stories=row[5],
-                status=row[6],
-                created_at=row[7],
-                updated_at=row[8],
-                archived=row[9],
-                system_architecture=row[11],  # Skip data_model at index 10
-                ai_provider=row[12],
-                ux_design=row[13],
-                tech_stack=row[14] if len(row) > 14 else None
+                ux_design=row[13],  # Position 13
+                system_architecture=row[11],  # Position 11
+                            application_type=row[15] if len(row) > 15 else None,  # Position 15
+            tech_stack=row[14] if len(row) > 14 else None,  # Position 14
+                status=row[6],  # Position 6
+                archived=row[9],  # Position 9
+                ai_provider=row[12],  # Position 12
+                created_at=row[7],  # Position 7
+                updated_at=row[8]  # Position 8
             ))
         
         return ProjectListResponse(projects=project_list, total=len(project_list))
@@ -106,17 +107,18 @@ async def create_project(project: ProjectCreate, db: AsyncSession = Depends(get_
     """Create a new project"""
     try:
         result = await db.execute(
-            text("""
-                INSERT INTO bmad_projects (name, description, requirements, ai_provider, status, archived, created_at, updated_at)
-                VALUES (:name, :description, :requirements, :ai_provider, 'draft', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                RETURNING *
-            """),
-            {
-                "name": project.name,
-                "description": project.description,
-                "requirements": project.requirements,
-                "ai_provider": project.ai_provider
-            }
+                    text("""
+            INSERT INTO bmad_projects (name, description, requirements, application_type, ai_provider, status, archived, created_at, updated_at)
+            VALUES (:name, :description, :requirements, :application_type, :ai_provider, 'draft', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            RETURNING *
+        """),
+        {
+            "name": project.name,
+            "description": project.description,
+            "requirements": project.requirements,
+            "application_type": project.application_type,
+            "ai_provider": project.ai_provider
+        }
         )
         
         new_project = result.fetchone()
@@ -129,14 +131,15 @@ async def create_project(project: ProjectCreate, db: AsyncSession = Depends(get_
             requirements=new_project[3],
             refined_requirements=new_project[4],
             user_stories=new_project[5],
-            status=new_project[6],
-            created_at=new_project[7],
-            updated_at=new_project[8],
-            archived=new_project[9],
-            system_architecture=new_project[11],  # Skip data_model at index 10
-            ai_provider=new_project[12],
-            ux_design=new_project[13],
-            tech_stack=new_project[14] if len(new_project) > 14 else None
+            ux_design=new_project[13],  # Position 13
+            system_architecture=new_project[11],  # Position 11
+            application_type=new_project[15] if len(new_project) > 15 else None,  # Position 15
+            tech_stack=new_project[14] if len(new_project) > 14 else None,  # Position 14
+            status=new_project[6],  # Position 6
+            archived=new_project[9],  # Position 9
+            ai_provider=new_project[12],  # Position 12
+            created_at=new_project[7],  # Position 7
+            updated_at=new_project[8]  # Position 8
         )
     except Exception as e:
         await db.rollback()
@@ -162,14 +165,15 @@ async def get_project(project_id: int, db: AsyncSession = Depends(get_db)):
             requirements=project[3],
             refined_requirements=project[4],
             user_stories=project[5],
-            status=project[6],
-            created_at=project[7],
-            updated_at=project[8],
-            archived=project[9],
-            system_architecture=project[11],  # Skip data_model at index 10
-            ai_provider=project[12],
-            ux_design=project[13],
-            tech_stack=project[14] if len(project) > 14 else None
+            ux_design=project[13],  # Position 13
+            system_architecture=project[11],  # Position 11
+            application_type=project[15] if len(project) > 15 else None,  # Position 15
+            tech_stack=project[14] if len(project) > 14 else None,  # Position 14
+            status=project[6],  # Position 6
+            archived=project[9],  # Position 9
+            ai_provider=project[12],  # Position 12
+            created_at=project[7],  # Position 7
+            updated_at=project[8]  # Position 8
         )
     except HTTPException:
         raise
@@ -193,6 +197,10 @@ async def update_project(project_id: int, project_update: ProjectUpdate, db: Asy
         if project_update.requirements is not None:
             update_fields.append("requirements = :requirements")
             params["requirements"] = project_update.requirements
+        if project_update.application_type is not None:
+            update_fields.append("application_type = :application_type")
+            params["application_type"] = project_update.application_type
+
         if project_update.ai_provider is not None:
             update_fields.append("ai_provider = :ai_provider")
             params["ai_provider"] = project_update.ai_provider
@@ -226,14 +234,15 @@ async def update_project(project_id: int, project_update: ProjectUpdate, db: Asy
             requirements=updated_project[3],
             refined_requirements=updated_project[4],
             user_stories=updated_project[5],
-            status=updated_project[6],
-            created_at=updated_project[7],
-            updated_at=updated_project[8],
-            archived=updated_project[9],
-            system_architecture=updated_project[11],  # Skip data_model at index 10
-            ai_provider=updated_project[12],
-            ux_design=updated_project[13],
-            tech_stack=updated_project[14] if len(updated_project) > 14 else None
+            ux_design=updated_project[13],  # Position 13
+            system_architecture=updated_project[11],  # Position 11
+            application_type=updated_project[15] if len(updated_project) > 15 else None,  # Position 15
+            tech_stack=updated_project[14] if len(updated_project) > 14 else None,  # Position 14
+            status=updated_project[6],  # Position 6
+            archived=updated_project[9],  # Position 9
+            ai_provider=updated_project[12],  # Position 12
+            created_at=updated_project[7],  # Position 7
+            updated_at=updated_project[8]  # Position 8
         )
     except HTTPException:
         raise
