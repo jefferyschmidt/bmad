@@ -47,6 +47,7 @@ const ProjectWorkspace: React.FC = () => {
   const [generatingArchitecture, setGeneratingArchitecture] = useState(false);
   const [generatingUXDesign, setGeneratingUXDesign] = useState(false);
   const [generatingProject, setGeneratingProject] = useState(false);
+  const [generationResult, setGenerationResult] = useState<any>(null);
   const [editForm, setEditForm] = useState({
     name: '',
     description: '',
@@ -246,6 +247,7 @@ const ProjectWorkspace: React.FC = () => {
       
       if (result.success) {
         // Project generation completed successfully
+        setGenerationResult(result);
         await fetchProject();
         setSuccess('Project generated successfully! Check the projects folder for your generated code.');
       } else {
@@ -625,9 +627,30 @@ const ProjectWorkspace: React.FC = () => {
                         
                         {project.status === 'Project Generated' ? (
                           <Box>
-                            <Alert severity="success" sx={{ mb: 2 }}>
-                              🎉 Project generated successfully! Your complete working software is ready.
-                            </Alert>
+                            {/* Show warnings if any */}
+                            {generationResult?.code_generation?.warnings && generationResult.code_generation.warnings.length > 0 && (
+                              <Alert severity="warning" sx={{ mb: 2 }}>
+                                <Typography variant="subtitle2" gutterBottom>
+                                  ⚠️ Generation completed with warnings:
+                                </Typography>
+                                {generationResult.code_generation.warnings.map((warning: string, index: number) => (
+                                  <Typography key={index} variant="body2" component="div">
+                                    • {warning}
+                                  </Typography>
+                                ))}
+                              </Alert>
+                            )}
+                            
+                            {/* Show success or warning based on status */}
+                            {generationResult?.code_generation?.status === 'Code generation completed with warnings' ? (
+                              <Alert severity="warning" sx={{ mb: 2 }}>
+                                ⚠️ Project structure created but some components may be missing. Check warnings above.
+                              </Alert>
+                            ) : (
+                              <Alert severity="success" sx={{ mb: 2 }}>
+                                🎉 Project generated successfully! Your complete working software is ready.
+                              </Alert>
+                            )}
                             
                             {/* Project Structure Display */}
                             <Typography variant="h6" gutterBottom>
@@ -636,45 +659,20 @@ const ProjectWorkspace: React.FC = () => {
                             <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
                               <Box sx={{ fontFamily: 'monospace', fontSize: '0.9rem' }}>
                                 <Box sx={{ color: 'primary.main', fontWeight: 'bold' }}>
-                                  projects/{project.id}_{project.name.toLowerCase().replace(/\s+/g, '_')}/
+                                  {generationResult?.project_path || `projects/${project.id}_${project.name.toLowerCase().replace(/\s+/g, '_')}/`}
                                 </Box>
                                 <Box sx={{ ml: 2, mt: 1 }}>
-                                  <Box sx={{ color: 'text.secondary' }}>├── 📄 README.md</Box>
-                                  <Box sx={{ color: 'text.secondary' }}>├── 📄 tech-stack.md</Box>
-                                  <Box sx={{ color: 'text.secondary' }}>├── 📄 .gitignore</Box>
-                                  <Box sx={{ color: 'text.secondary' }}>├── 📄 package.json</Box>
-                                  <Box sx={{ color: 'text.secondary' }}>├── 📄 Dockerfile</Box>
-                                  <Box sx={{ color: 'text.secondary' }}>├── 📄 docker-compose.yml</Box>
-                                  <Box sx={{ color: 'text.secondary' }}>├── 📁 frontend/</Box>
-                                  <Box sx={{ ml: 4, color: 'text.secondary' }}>
-                                    <Box>├── 📄 package.json</Box>
-                                    <Box>├── 📁 src/</Box>
-                                    <Box sx={{ ml: 2 }}>
-                                      <Box>├── 📄 App.js</Box>
-                                      <Box>├── 📄 App.css</Box>
-                                      <Box>├── 📄 index.js</Box>
-                                      <Box>├── 📄 index.css</Box>
-                                      <Box>├── 📁 components/</Box>
-                                      <Box sx={{ ml: 2 }}>└── 📄 Header.js</Box>
-                                      <Box>└── 📁 pages/</Box>
-                                      <Box sx={{ ml: 2 }}>
-                                        <Box>├── 📄 Home.js</Box>
-                                        <Box>├── 📄 Gallery.js</Box>
-                                        <Box>└── 📄 Marketplace.js</Box>
+                                  {generationResult?.code_generation?.files_created && generationResult.code_generation.files_created.length > 0 ? (
+                                    generationResult.code_generation.files_created.map((file: string, index: number) => (
+                                      <Box key={index} sx={{ color: 'text.secondary' }}>
+                                        {index === generationResult.code_generation.files_created.length - 1 ? '└──' : '├──'} 📄 {file}
                                       </Box>
+                                    ))
+                                  ) : (
+                                    <Box sx={{ color: 'warning.main', fontStyle: 'italic' }}>
+                                      ⚠️ No source files were generated. Check warnings above.
                                     </Box>
-                                    <Box>└── 📁 public/</Box>
-                                    <Box sx={{ ml: 2 }}>└── 📄 index.html</Box>
-                                  </Box>
-                                  <Box sx={{ color: 'text.secondary' }}>├── 📁 backend/</Box>
-                                  <Box sx={{ ml: 4, color: 'text.secondary' }}>
-                                    <Box>├── 📄 package.json</Box>
-                                    <Box>├── 📄 server.js</Box>
-                                    <Box>└── 📄 .env.example</Box>
-                                  </Box>
-                                  <Box sx={{ color: 'text.secondary' }}>├── 📁 docs/</Box>
-                                  <Box sx={{ color: 'text.secondary' }}>├── 📁 config/</Box>
-                                  <Box sx={{ color: 'text.secondary' }}>└── 📁 scripts/</Box>
+                                  )}
                                 </Box>
                               </Box>
                             </Paper>
@@ -710,11 +708,30 @@ const ProjectWorkspace: React.FC = () => {
                             </Typography>
                             <Paper variant="outlined" sx={{ p: 2 }}>
                               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                                <Chip label="React.js" color="primary" variant="outlined" />
-                                <Chip label="Express.js" color="primary" variant="outlined" />
-                                <Chip label="Node.js" color="primary" variant="outlined" />
-                                <Chip label="PostgreSQL" color="primary" variant="outlined" />
-                                <Chip label="Docker" color="primary" variant="outlined" />
+                                {generationResult?.tech_stack ? (
+                                  <>
+                                    {generationResult.tech_stack.frontend?.name && (
+                                      <Chip label={generationResult.tech_stack.frontend.name} color="primary" variant="outlined" />
+                                    )}
+                                    {generationResult.tech_stack.backend?.name && generationResult.tech_stack.backend.name !== "None" && (
+                                      <Chip label={generationResult.tech_stack.backend.name} color="primary" variant="outlined" />
+                                    )}
+                                    {generationResult.tech_stack.database?.name && generationResult.tech_stack.database.name !== "None" && (
+                                      <Chip label={generationResult.tech_stack.database.name} color="primary" variant="outlined" />
+                                    )}
+                                    {generationResult.tech_stack.deployment?.name && (
+                                      <Chip label={generationResult.tech_stack.deployment.name} color="primary" variant="outlined" />
+                                    )}
+                                  </>
+                                ) : (
+                                  <>
+                                    <Chip label="React.js" color="primary" variant="outlined" />
+                                    <Chip label="Express.js" color="primary" variant="outlined" />
+                                    <Chip label="Node.js" color="primary" variant="outlined" />
+                                    <Chip label="PostgreSQL" color="primary" variant="outlined" />
+                                    <Chip label="Docker" color="primary" variant="outlined" />
+                                  </>
+                                )}
                               </Box>
                             </Paper>
                           </Box>

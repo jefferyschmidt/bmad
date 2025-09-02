@@ -1,14 +1,46 @@
-.env
-.env.*
-.next/
-node_modules/
-dist/
-build/
-coverage/
 .DS_Store
-*.log
-*.swp
-*.swo
+node_modules
+.next
 .vercel
-.idea
-.vscode
+.env*
+coverage
+dist
+.prisma
+prisma/migrations
+End File# Human: 
+                Generate a Dockerfile for this project.
+
+                PROJECT: Guitar site
+                TECH STACK: {
+  "project_type": "web_application",
+  "tech_stack_reasoning": "Next.js provides a robust and scalable full-stack React framework that aligns well with the project requirements. Prisma offers a modern database toolkit that simplifies the data access layer, while PostgreSQL is a suitable choice for the relational data needs of the Guitar Site. This tech stack enables efficient development, good performance, and easy deployment to Vercel.",
+  "selected_tech_stack_id": "nextjs_prisma",
+  "frontend": {
+    "name": "Next.js",
+    "language": "TypeScript",
+    "framework": "Next.js",
+    "styling": "Tailwind CSS"
+  },
+  "backend": {
+    "name": "Next.js API",
+    "language": "TypeScript",
+    "framework": "Next.js"
+  },
+  "database": {
+    "name": "PostgreSQL",
+    "type": "Relational"
+  },
+  "deployment": {
+    "name": "Vercel",
+    "platform": "Vercel",
+    "containerization": "None"
+  }
+}
+
+                Return ONLY the Dockerfile content, no explanations.
+
+                The Dockerfile should be optimized for production deployment.
+
+                Include appropriate steps for the project type and tech stack.
+
+                

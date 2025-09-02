@@ -418,13 +418,24 @@ class FullStackDeveloperAgent:
                 refined_requirements, data_model, system_architecture, ux_design, ai_provider, db_session
             )
             
-            return {
-                "status": "AI-driven code generation completed successfully",
-                "tech_stack_applied": tech_stack,
-                "files_created": files_created,
-                "instructions": f"Project generated with {len(files_created)} files using AI. Check the project directory for setup instructions.",
-                "dependencies": tech_stack.get("dependencies", {}) if tech_stack else {}
-            }
+            # Check if any files were actually created
+            if not files_created:
+                return {
+                    "status": "Code generation completed with warnings",
+                    "tech_stack_applied": tech_stack,
+                    "files_created": files_created,
+                    "instructions": f"Project structure created but no source files were generated. This may indicate unsupported tech stack or generation issues.",
+                    "dependencies": tech_stack.get("dependencies", {}) if tech_stack else {},
+                    "warnings": ["No source files were generated. Check tech stack compatibility."]
+                }
+            else:
+                return {
+                    "status": "AI-driven code generation completed successfully",
+                    "tech_stack_applied": tech_stack,
+                    "files_created": files_created,
+                    "instructions": f"Project generated with {len(files_created)} files using AI. Check the project directory for setup instructions.",
+                    "dependencies": tech_stack.get("dependencies", {}) if tech_stack else {}
+                }
             
         except Exception as e:
             print(f"AI code generation error: {e}")
@@ -636,6 +647,7 @@ class FullStackDeveloperAgent:
     ) -> List[str]:
         """Use AI to generate source code files based on tech stack and requirements."""
         files_created = []
+        warnings = []
         
         try:
             
@@ -647,12 +659,17 @@ class FullStackDeveloperAgent:
             print(f"Project type: {project_type}, Backend: {backend_lang}, Frontend: {frontend_framework}")
             
             # Generate backend code based on language
-            if backend_lang == "Node.js":
-                backend_files = await FullStackDeveloperAgent._generate_ai_nodejs_backend(
-                    project_path, tech_stack, project_name, requirements, refined_requirements, 
-                    data_model, system_architecture, ux_design, ai_provider, db_session
-                )
-                files_created.extend(backend_files)
+            if backend_lang in ["Node.js", "TypeScript"]:
+                # Handle both Node.js and TypeScript backends (Next.js uses TypeScript)
+                if frontend_framework == "Next.js":
+                    # Next.js handles both frontend and backend in one framework
+                    print(f"Next.js full-stack framework detected - will handle backend in frontend generation")
+                else:
+                    backend_files = await FullStackDeveloperAgent._generate_ai_nodejs_backend(
+                        project_path, tech_stack, project_name, requirements, refined_requirements, 
+                        data_model, system_architecture, ux_design, ai_provider, db_session
+                    )
+                    files_created.extend(backend_files)
             elif backend_lang == "Python":
                 backend_files = await FullStackDeveloperAgent._generate_ai_python_backend(
                     project_path, tech_stack, project_name, requirements, refined_requirements,
@@ -664,14 +681,21 @@ class FullStackDeveloperAgent:
                 print(f"No backend required for project type '{project_type}'")
             else:
                 # Handle unsupported backend languages
-                print(f"Warning: Unsupported backend language '{backend_lang}' for project type '{project_type}'")
-                print("Available backend languages: Node.js, Python, None (for static sites)")
+                warning_msg = f"Unsupported backend language '{backend_lang}' for project type '{project_type}'. Available: Node.js, TypeScript, Python, None (for static sites)"
+                print(f"Warning: {warning_msg}")
+                warnings.append(warning_msg)
                 # Don't raise an error, just skip backend generation and continue
             
             # Generate frontend code based on framework
             print(f"Frontend framework: '{frontend_framework}', Project type: '{project_type}'")
             if frontend_framework == "React.js":
                 frontend_files = await FullStackDeveloperAgent._generate_ai_react_frontend(
+                    project_path, tech_stack, project_name, requirements, refined_requirements,
+                    data_model, system_architecture, ux_design, ai_provider, db_session
+                )
+                files_created.extend(frontend_files)
+            elif frontend_framework == "Next.js":
+                frontend_files = await FullStackDeveloperAgent._generate_ai_nextjs_frontend(
                     project_path, tech_stack, project_name, requirements, refined_requirements,
                     data_model, system_architecture, ux_design, ai_provider, db_session
                 )
@@ -690,9 +714,14 @@ class FullStackDeveloperAgent:
                 files_created.extend(frontend_files)
             else:
                 # Handle unsupported tech stacks
-                print(f"Warning: Unsupported frontend framework '{frontend_framework}' for project type '{project_type}'")
-                print("Available frameworks: React.js, Vue.js, Jekyll, HTML/CSS")
+                warning_msg = f"Unsupported frontend framework '{frontend_framework}' for project type '{project_type}'. Available: React.js, Next.js, Vue.js, Jekyll, HTML/CSS"
+                print(f"Warning: {warning_msg}")
+                warnings.append(warning_msg)
                 # Don't raise an error, just skip frontend generation and continue
+            
+            # If we have warnings but no files created, that's a problem
+            if warnings and not files_created:
+                print(f"Generation failed due to unsupported tech stack. Warnings: {warnings}")
             
             return files_created
             
@@ -954,6 +983,239 @@ class FullStackDeveloperAgent:
             
         except Exception as e:
             print(f"Error generating Vue frontend: {e}")
+            return []
+    
+    @staticmethod
+    async def _generate_ai_nextjs_frontend(
+        project_path: Path,
+        tech_stack: Dict[str, Any],
+        project_name: str,
+        requirements: str,
+        refined_requirements: str,
+        data_model: str,
+        system_architecture: str,
+        ux_design: str,
+        ai_provider: str,
+        db_session
+    ) -> List[str]:
+        """Use AI to generate Next.js full-stack application code."""
+        files_created = []
+        
+        try:
+            # Create Next.js directory structure
+            src_dir = project_path / "src"
+            src_dir.mkdir(exist_ok=True)
+            
+            pages_dir = src_dir / "pages"
+            pages_dir.mkdir(exist_ok=True)
+            
+            api_dir = pages_dir / "api"
+            api_dir.mkdir(exist_ok=True)
+            
+            components_dir = src_dir / "components"
+            components_dir.mkdir(exist_ok=True)
+            
+            styles_dir = src_dir / "styles"
+            styles_dir.mkdir(exist_ok=True)
+            
+            # Generate package.json
+            package_prompt = f"""
+                Generate a package.json file for a Next.js application with TypeScript and Tailwind CSS.
+                
+                PROJECT: {project_name}
+                REQUIREMENTS: {requirements}
+                TECH STACK: {json.dumps(tech_stack, indent=2)}
+                
+                Include all necessary dependencies for:
+                - Next.js with TypeScript
+                - Tailwind CSS
+                - Prisma (if database is PostgreSQL)
+                - Authentication libraries
+                - UI components
+                
+                Return ONLY the package.json content, no explanations.
+                """
+            
+            package_content = await FullStackDeveloperAgent._call_ai_service(
+                prompt=package_prompt,
+                ai_provider=ai_provider,
+                db_session=db_session
+            )
+            
+            package_file = project_path / "package.json"
+            package_file.write_text(package_content)
+            files_created.append("package.json")
+            
+            # Generate Next.js config
+            nextjs_config_prompt = f"""
+                Generate a next.config.js file for a Next.js application.
+                
+                PROJECT: {project_name}
+                REQUIREMENTS: {requirements}
+                
+                Return ONLY the next.config.js content, no explanations.
+                """
+            
+            config_content = await FullStackDeveloperAgent._call_ai_service(
+                prompt=nextjs_config_prompt,
+                ai_provider=ai_provider,
+                db_session=db_session
+            )
+            
+            config_file = project_path / "next.config.js"
+            config_file.write_text(config_content)
+            files_created.append("next.config.js")
+            
+            # Generate TypeScript config
+            tsconfig_prompt = f"""
+                Generate a tsconfig.json file for a Next.js TypeScript application.
+                
+                Return ONLY the tsconfig.json content, no explanations.
+                """
+            
+            tsconfig_content = await FullStackDeveloperAgent._call_ai_service(
+                prompt=tsconfig_prompt,
+                ai_provider=ai_provider,
+                db_session=db_session
+            )
+            
+            tsconfig_file = project_path / "tsconfig.json"
+            tsconfig_file.write_text(tsconfig_content)
+            files_created.append("tsconfig.json")
+            
+            # Generate Tailwind config
+            tailwind_config_prompt = f"""
+                Generate a tailwind.config.js file for a Next.js application.
+                
+                Return ONLY the tailwind.config.js content, no explanations.
+                """
+            
+            tailwind_content = await FullStackDeveloperAgent._call_ai_service(
+                prompt=tailwind_config_prompt,
+                ai_provider=ai_provider,
+                db_session=db_session
+            )
+            
+            tailwind_file = project_path / "tailwind.config.js"
+            tailwind_file.write_text(tailwind_content)
+            files_created.append("tailwind.config.js")
+            
+            # Generate Prisma schema if database is PostgreSQL
+            database_info = tech_stack.get("database") or {}
+            if database_info.get("name") == "PostgreSQL":
+                prisma_prompt = f"""
+                    Generate a Prisma schema file for this project.
+                    
+                    PROJECT: {project_name}
+                    REQUIREMENTS: {requirements}
+                    DATA MODEL: {data_model}
+                    SYSTEM ARCHITECTURE: {system_architecture}
+                    
+                    Create models based on the data model and system architecture.
+                    Include proper relationships and field types.
+                    
+                    Return ONLY the schema.prisma content, no explanations.
+                    """
+                
+                prisma_content = await FullStackDeveloperAgent._call_ai_service(
+                    prompt=prisma_prompt,
+                    ai_provider=ai_provider,
+                    db_session=db_session
+                )
+                
+                prisma_dir = project_path / "prisma"
+                prisma_dir.mkdir(exist_ok=True)
+                
+                schema_file = prisma_dir / "schema.prisma"
+                schema_file.write_text(prisma_content)
+                files_created.append("prisma/schema.prisma")
+            
+            # Generate main page
+            page_prompt = f"""
+                Generate a Next.js page component for the main page of this application.
+                
+                PROJECT: {project_name}
+                REQUIREMENTS: {requirements}
+                REFINED REQUIREMENTS: {refined_requirements}
+                UX DESIGN: {ux_design}
+                TECH STACK: {json.dumps(tech_stack, indent=2)}
+                
+                Create a TypeScript React component that:
+                - Uses Next.js page structure
+                - Implements the UX design specifications
+                - Includes proper TypeScript types
+                - Uses Tailwind CSS for styling
+                - Matches the project requirements
+                
+                Return ONLY the TypeScript React component code, no explanations.
+                """
+            
+            page_content = await FullStackDeveloperAgent._call_ai_service(
+                prompt=page_prompt,
+                ai_provider=ai_provider,
+                db_session=db_session
+            )
+            
+            index_file = pages_dir / "index.tsx"
+            index_file.write_text(page_content)
+            files_created.append("src/pages/index.tsx")
+            
+            # Generate API route example
+            api_prompt = f"""
+                Generate a Next.js API route for this application.
+                
+                PROJECT: {project_name}
+                REQUIREMENTS: {requirements}
+                SYSTEM ARCHITECTURE: {system_architecture}
+                
+                Create a TypeScript API route that:
+                - Uses Next.js API route structure
+                - Implements proper error handling
+                - Includes TypeScript types
+                - Matches the system architecture requirements
+                
+                Return ONLY the TypeScript API route code, no explanations.
+                """
+            
+            api_content = await FullStackDeveloperAgent._call_ai_service(
+                prompt=api_prompt,
+                ai_provider=ai_provider,
+                db_session=db_session
+            )
+            
+            api_file = api_dir / "example.ts"
+            api_file.write_text(api_content)
+            files_created.append("src/pages/api/example.ts")
+            
+            # Generate global styles
+            styles_prompt = f"""
+                Generate global CSS styles for a Next.js application using Tailwind CSS.
+                
+                PROJECT: {project_name}
+                UX DESIGN: {ux_design}
+                
+                Create styles that:
+                - Import Tailwind CSS
+                - Include custom styles based on UX design
+                - Use the color palette and typography from UX design
+                
+                Return ONLY the CSS content, no explanations.
+                """
+            
+            styles_content = await FullStackDeveloperAgent._call_ai_service(
+                prompt=styles_prompt,
+                ai_provider=ai_provider,
+                db_session=db_session
+            )
+            
+            styles_file = styles_dir / "globals.css"
+            styles_file.write_text(styles_content)
+            files_created.append("src/styles/globals.css")
+            
+            return files_created
+            
+        except Exception as e:
+            print(f"Error generating Next.js frontend: {e}")
             return []
     
     @staticmethod

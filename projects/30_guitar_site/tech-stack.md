@@ -4,7 +4,7 @@
 
 {
   "project_type": "web_application",
-  "tech_stack_reasoning": "Next.js provides a robust and scalable full-stack React framework that aligns well with the project's requirements. The integrated API routes and Prisma database toolkit simplify the development and deployment of the Guitar Site, ensuring a modern, performant, and maintainable application.",
+  "tech_stack_reasoning": "Next.js provides a robust and scalable full-stack React framework that aligns well with the project requirements. Prisma offers a modern database toolkit that simplifies the data access layer, while PostgreSQL is a suitable choice for the relational data needs of the Guitar Site. This tech stack enables efficient development, good performance, and easy deployment to Vercel.",
   "selected_tech_stack_id": "nextjs_prisma",
   "frontend": {
     "name": "Next.js",
@@ -32,7 +32,7 @@
 web_application
 
 ## Reasoning
-Next.js provides a robust and scalable full-stack React framework that aligns well with the project's requirements. The integrated API routes and Prisma database toolkit simplify the development and deployment of the Guitar Site, ensuring a modern, performant, and maintainable application.
+Next.js provides a robust and scalable full-stack React framework that aligns well with the project requirements. Prisma offers a modern database toolkit that simplifies the data access layer, while PostgreSQL is a suitable choice for the relational data needs of the Guitar Site. This tech stack enables efficient development, good performance, and easy deployment to Vercel.
 
 ## Frontend
 - Framework: Next.js

@@ -1,0 +1,66 @@
+```prisma
+// schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  user_id         Int        @id @default(autoincrement())
+  username       String     @unique
+  email          String     @unique
+  password       String
+  profile_picture String
+  bio            String
+  Guitars        Guitar[]
+  Comments       Comment[]
+  Likes          Like[]
+  Shares         Share[]
+}
+
+model Guitar {
+  guitar_id      Int        @id @default(autoincrement())
+  user_id        Int
+  brand          String
+  model          String
+  year           Int
+  description    String
+  guitar_photos  String
+  User           User       @relation(fields: [user_id], references: [user_id])
+  Comments       Comment[]
+  Likes          Like[]
+  Shares         Share[]
+}
+
+model Comment {
+  comment_id     Int        @id @default(autoincrement())
+  guitar_id      Int
+  user_id        Int
+  comment_text   String
+  created_at     DateTime   @default(now())
+  Guitar         Guitar     @relation(fields: [guitar_id], references: [guitar_id])
+  User           User       @relation(fields: [user_id], references: [user_id])
+}
+
+model Like {
+  like_id        Int        @id @default(autoincrement())
+  guitar_id      Int
+  user_id        Int
+  created_at     DateTime   @default(now())
+  Guitar         Guitar     @relation(fields: [guitar_id], references: [guitar_id])
+  User           User       @relation(fields: [user_id], references: [user_id])
+}
+
+model Share {
+  share_id       Int        @id @default(autoincrement())
+  guitar_id      Int
+  user_id        Int
+  created_at     DateTime   @default(now())
+  Guitar         Guitar     @relation(fields: [guitar_id], references: [guitar_id])
+  User           User       @relation(fields: [user_id], references: [user_id])
+}
+```
