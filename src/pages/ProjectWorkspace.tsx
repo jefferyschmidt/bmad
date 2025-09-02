@@ -78,6 +78,8 @@ const ProjectWorkspace: React.FC = () => {
         application_type: data.application_type || '',
         ai_provider: data.ai_provider
       });
+      // Clear generation result when fetching project to avoid stale data
+      setGenerationResult(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch project');
     } finally {
@@ -646,9 +648,13 @@ const ProjectWorkspace: React.FC = () => {
                               <Alert severity="warning" sx={{ mb: 2 }}>
                                 ⚠️ Project structure created but some components may be missing. Check warnings above.
                               </Alert>
-                            ) : (
+                            ) : generationResult ? (
                               <Alert severity="success" sx={{ mb: 2 }}>
                                 🎉 Project generated successfully! Your complete working software is ready.
+                              </Alert>
+                            ) : (
+                              <Alert severity="info" sx={{ mb: 2 }}>
+                                ℹ️ Project was previously generated. Click "REGENERATE PROJECT" to see current generation details.
                               </Alert>
                             )}
                             
@@ -657,24 +663,30 @@ const ProjectWorkspace: React.FC = () => {
                               📁 Generated Project Structure
                             </Typography>
                             <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-                              <Box sx={{ fontFamily: 'monospace', fontSize: '0.9rem' }}>
-                                <Box sx={{ color: 'primary.main', fontWeight: 'bold' }}>
-                                  {generationResult?.project_path || `projects/${project.id}_${project.name.toLowerCase().replace(/\s+/g, '_')}/`}
-                                </Box>
-                                <Box sx={{ ml: 2, mt: 1 }}>
-                                  {generationResult?.code_generation?.files_created && generationResult.code_generation.files_created.length > 0 ? (
-                                    generationResult.code_generation.files_created.map((file: string, index: number) => (
-                                      <Box key={index} sx={{ color: 'text.secondary' }}>
-                                        {index === generationResult.code_generation.files_created.length - 1 ? '└──' : '├──'} 📄 {file}
+                              {generationResult?.project_path ? (
+                                <Box sx={{ fontFamily: 'monospace', fontSize: '0.9rem' }}>
+                                  <Box sx={{ color: 'primary.main', fontWeight: 'bold' }}>
+                                    {generationResult.project_path}/
+                                  </Box>
+                                  <Box sx={{ ml: 2, mt: 1 }}>
+                                    {generationResult?.code_generation?.files_created && generationResult.code_generation.files_created.length > 0 ? (
+                                      generationResult.code_generation.files_created.map((file: string, index: number) => (
+                                        <Box key={index} sx={{ color: 'text.secondary' }}>
+                                          {index === generationResult.code_generation.files_created.length - 1 ? '└──' : '├──'} 📄 {file}
+                                        </Box>
+                                      ))
+                                    ) : (
+                                      <Box sx={{ color: 'warning.main', fontStyle: 'italic' }}>
+                                        ⚠️ No source files were generated. Check warnings above.
                                       </Box>
-                                    ))
-                                  ) : (
-                                    <Box sx={{ color: 'warning.main', fontStyle: 'italic' }}>
-                                      ⚠️ No source files were generated. Check warnings above.
-                                    </Box>
-                                  )}
+                                    )}
+                                  </Box>
                                 </Box>
-                              </Box>
+                              ) : (
+                                <Alert severity="error">
+                                  ❌ No project path available. Click "REGENERATE PROJECT" to see the actual project structure.
+                                </Alert>
+                              )}
                             </Paper>
 
                             {/* Quick Start Instructions */}
@@ -682,24 +694,48 @@ const ProjectWorkspace: React.FC = () => {
                               🚀 Quick Start
                             </Typography>
                             <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-                              <Typography variant="body2" component="div" sx={{ mb: 2 }}>
-                                <strong>Backend (Express.js):</strong>
-                              </Typography>
-                              <Box sx={{ fontFamily: 'monospace', fontSize: '0.85rem', bgcolor: 'grey.50', p: 1, borderRadius: 1, mb: 2 }}>
-                                cd projects/{project.id}_{project.name.toLowerCase().replace(/\s+/g, '_')}/backend<br/>
-                                npm install<br/>
-                                cp .env.example .env<br/>
-                                npm run dev
-                              </Box>
-                              
-                              <Typography variant="body2" component="div" sx={{ mb: 2 }}>
-                                <strong>Frontend (React.js):</strong>
-                              </Typography>
-                              <Box sx={{ fontFamily: 'monospace', fontSize: '0.85rem', bgcolor: 'grey.50', p: 1, borderRadius: 1 }}>
-                                cd projects/{project.id}_{project.name.toLowerCase().replace(/\s+/g, '_')}/frontend<br/>
-                                npm install<br/>
-                                npm start
-                              </Box>
+                              {generationResult?.tech_stack?.frontend?.framework === 'Next.js' ? (
+                                <>
+                                  <Typography variant="body2" component="div" sx={{ mb: 2 }}>
+                                    <strong>Next.js Full-Stack Application:</strong>
+                                  </Typography>
+                                  <Box sx={{ fontFamily: 'monospace', fontSize: '0.85rem', bgcolor: 'grey.50', p: 1, borderRadius: 1, mb: 2 }}>
+                                    cd {generationResult.project_path}<br/>
+                                    npm install<br/>
+                                    npx prisma generate<br/>
+                                    npx prisma db push<br/>
+                                    npm run dev
+                                  </Box>
+                                  <Typography variant="body2" color="text.secondary">
+                                    This will start the Next.js development server at http://localhost:3000
+                                  </Typography>
+                                </>
+                              ) : generationResult?.tech_stack?.frontend?.framework ? (
+                                <>
+                                  <Typography variant="body2" component="div" sx={{ mb: 2 }}>
+                                    <strong>Backend ({generationResult.tech_stack.backend?.name || 'Unknown'}):</strong>
+                                  </Typography>
+                                  <Box sx={{ fontFamily: 'monospace', fontSize: '0.85rem', bgcolor: 'grey.50', p: 1, borderRadius: 1, mb: 2 }}>
+                                    cd {generationResult.project_path}/backend<br/>
+                                    npm install<br/>
+                                    cp .env.example .env<br/>
+                                    npm run dev
+                                  </Box>
+                                  
+                                  <Typography variant="body2" component="div" sx={{ mb: 2 }}>
+                                    <strong>Frontend ({generationResult.tech_stack.frontend.name}):</strong>
+                                  </Typography>
+                                  <Box sx={{ fontFamily: 'monospace', fontSize: '0.85rem', bgcolor: 'grey.50', p: 1, borderRadius: 1 }}>
+                                    cd {generationResult.project_path}/frontend<br/>
+                                    npm install<br/>
+                                    npm start
+                                  </Box>
+                                </>
+                              ) : (
+                                <Alert severity="error">
+                                  ❌ No generation data available. Click "REGENERATE PROJECT" to generate the project and see setup instructions.
+                                </Alert>
+                              )}
                             </Paper>
 
                             {/* Tech Stack Summary */}
@@ -707,32 +743,26 @@ const ProjectWorkspace: React.FC = () => {
                               🛠️ Tech Stack Used
                             </Typography>
                             <Paper variant="outlined" sx={{ p: 2 }}>
-                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                                {generationResult?.tech_stack ? (
-                                  <>
-                                    {generationResult.tech_stack.frontend?.name && (
-                                      <Chip label={generationResult.tech_stack.frontend.name} color="primary" variant="outlined" />
-                                    )}
-                                    {generationResult.tech_stack.backend?.name && generationResult.tech_stack.backend.name !== "None" && (
-                                      <Chip label={generationResult.tech_stack.backend.name} color="primary" variant="outlined" />
-                                    )}
-                                    {generationResult.tech_stack.database?.name && generationResult.tech_stack.database.name !== "None" && (
-                                      <Chip label={generationResult.tech_stack.database.name} color="primary" variant="outlined" />
-                                    )}
-                                    {generationResult.tech_stack.deployment?.name && (
-                                      <Chip label={generationResult.tech_stack.deployment.name} color="primary" variant="outlined" />
-                                    )}
-                                  </>
-                                ) : (
-                                  <>
-                                    <Chip label="React.js" color="primary" variant="outlined" />
-                                    <Chip label="Express.js" color="primary" variant="outlined" />
-                                    <Chip label="Node.js" color="primary" variant="outlined" />
-                                    <Chip label="PostgreSQL" color="primary" variant="outlined" />
-                                    <Chip label="Docker" color="primary" variant="outlined" />
-                                  </>
-                                )}
-                              </Box>
+                              {generationResult?.tech_stack ? (
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                                  {generationResult.tech_stack.frontend?.name && (
+                                    <Chip label={generationResult.tech_stack.frontend.name} color="primary" variant="outlined" />
+                                  )}
+                                  {generationResult.tech_stack.backend?.name && generationResult.tech_stack.backend.name !== "None" && (
+                                    <Chip label={generationResult.tech_stack.backend.name} color="primary" variant="outlined" />
+                                  )}
+                                  {generationResult.tech_stack.database?.name && generationResult.tech_stack.database.name !== "None" && (
+                                    <Chip label={generationResult.tech_stack.database.name} color="primary" variant="outlined" />
+                                  )}
+                                  {generationResult.tech_stack.deployment?.name && (
+                                    <Chip label={generationResult.tech_stack.deployment.name} color="primary" variant="outlined" />
+                                  )}
+                                </Box>
+                              ) : (
+                                <Alert severity="error">
+                                  ❌ No tech stack data available. Click "REGENERATE PROJECT" to see the actual tech stack used.
+                                </Alert>
+                              )}
                             </Paper>
                           </Box>
                         ) : (

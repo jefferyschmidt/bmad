@@ -2,15 +2,16 @@
 module.exports = {
   reactStrictMode: true,
   images: {
-    domains: ['example.com', 'api.example.com'],
+    domains: ['example.com', 'example.org', 'example.net'],
+  },
+  experimental: {
+    appDir: true,
   },
   env: {
-    FIREBASE_API_KEY: 'your_firebase_api_key',
-    FIREBASE_AUTH_DOMAIN: 'your_firebase_auth_domain',
-    FIREBASE_PROJECT_ID: 'your_firebase_project_id',
-    FIREBASE_STORAGE_BUCKET: 'your_firebase_storage_bucket',
-    FIREBASE_MESSAGING_SENDER_ID: 'your_firebase_messaging_sender_id',
-    FIREBASE_APP_ID: 'your_firebase_app_id',
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
+    GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
   },
 }
 ```

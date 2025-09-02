@@ -1,68 +1,75 @@
-Here is a TypeScript API route that matches the system architecture requirements:
+Here's a TypeScript API route that matches the system architecture requirements for the Guitar Site:
 
 ```typescript
-import { NextApiRequest, NextApiResponse } from 'next';
-import { Pool } from 'pg';
+// pages/api/guitars/[id].ts
 
-// Database connection
-const pool = new Pool({
-  user: process.env.POSTGRES_USER,
-  password: process.env.POSTGRES_PASSWORD,
-  host: process.env.POSTGRES_HOST,
-  database: process.env.POSTGRES_DB,
-  port: parseInt(process.env.POSTGRES_PORT || '5432', 10),
-});
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { Guitar, GuitarData, GuitarUpdateData } from '../../types/guitar';
+import { getGuitarById, updateGuitarById, deleteGuitarById } from '../../services/guitarService';
+import { isAuthenticated } from '../../utils/auth';
 
-// Type definitions
-interface Guitar {
-  id: number;
-  userId: number;
+type Data = Guitar | { message: string };
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<Data>
+) {
+  const { id } = req.query;
+
+  try {
+    switch (req.method) {
+      case 'GET':
+        const guitar = await getGuitarById(String(id));
+        res.status(200).json(guitar);
+        break;
+      case 'PUT':
+        if (!isAuthenticated(req)) {
+          res.status(401).json({ message: 'Unauthorized' });
+          return;
+        }
+
+        const updatedData: GuitarUpdateData = req.body;
+        const updatedGuitar = await updateGuitarById(String(id), updatedData);
+        res.status(200).json(updatedGuitar);
+        break;
+      case 'DELETE':
+        if (!isAuthenticated(req)) {
+          res.status(401).json({ message: 'Unauthorized' });
+          return;
+        }
+
+        await deleteGuitarById(String(id));
+        res.status(204).end();
+        break;
+      default:
+        res.status(405).json({ message: 'Method Not Allowed' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
+```
+
+This API route handles CRUD operations for a specific guitar by its `id`. It uses the `getGuitarById`, `updateGuitarById`, and `deleteGuitarById` functions from the `guitarService` to interact with the database.
+
+The route also includes proper error handling, returning appropriate HTTP status codes and error messages. It also checks for authentication using the `isAuthenticated` function before allowing update and delete operations.
+
+The TypeScript types used in this API route are defined in the `types/guitar.ts` file, which would contain the following:
+
+```typescript
+export type Guitar = {
+  id: string;
+  userId: string;
   brand: string;
   model: string;
   year: number;
   description: string;
   photos: string[];
-}
+};
 
-interface ApiResponse<T> {
-  data: T;
-  error?: string;
-}
-
-// API route handler
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<ApiResponse<Guitar>>
-) {
-  if (req.method === 'POST') {
-    try {
-      const { userId, brand, model, year, description, photos } = req.body;
-      const { rows } = await pool.query(
-        'INSERT INTO guitars (userId, brand, model, year, description, photos) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-        [userId, brand, model, year, description, photos]
-      );
-      const newGuitar: Guitar = rows[0];
-      res.status(201).json({ data: newGuitar });
-    } catch (error) {
-      res.status(500).json({ error: 'Error creating guitar' });
-    }
-  } else if (req.method === 'GET') {
-    try {
-      const { id } = req.query;
-      const { rows } = await pool.query('SELECT * FROM guitars WHERE id = $1', [
-        id,
-      ]);
-      if (rows.length === 0) {
-        res.status(404).json({ error: 'Guitar not found' });
-      } else {
-        const guitar: Guitar = rows[0];
-        res.status(200).json({ data: guitar });
-      }
-    } catch (error) {
-      res.status(500).json({ error: 'Error retrieving guitar' });
-    }
-  } else {
-    res.status(405).json({ error: 'Method not allowed' });
-  }
-}
+export type GuitarData = Omit<Guitar, 'id'>;
+export type GuitarUpdateData = Partial<GuitarData>;
 ```
+
+This ensures that the API route is type-safe and follows the system architecture requirements.

@@ -1,137 +1,88 @@
 Here's the TypeScript React component for the main page of the Guitar Site application:
 
-```tsx
+```typescript
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import { FaSearch, FaRegThumbsUp, FaRegCommentAlt, FaShareAlt } from 'react-icons/fa';
+import { NextPage } from 'next';
+import { FaSearch } from 'react-icons/fa';
+import GuitarCard from '../components/GuitarCard';
+import { Guitar, User } from '../types';
 
-interface Guitar {
-  id: string;
-  title: string;
-  brand: string;
-  model: string;
-  year: number;
-  description: string;
-  imageUrl: string;
-  userId: string;
-  user: {
-    id: string;
-    name: string;
-    avatar: string;
-  };
-  likes: number;
-  comments: number;
+interface HomePageProps {
+  featuredGuitars: Guitar[];
+  newestGuitars: Guitar[];
+  topRatedGuitars: Guitar[];
 }
 
-const Home: React.FC = () => {
-  const [guitars, setGuitars] = useState<Guitar[]>([]);
+const HomePage: NextPage<HomePageProps> = ({
+  featuredGuitars,
+  newestGuitars,
+  topRatedGuitars,
+}) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const router = useRouter();
+  const [filteredGuitars, setFilteredGuitars] = useState<Guitar[]>([]);
 
   useEffect(() => {
-    // Fetch featured guitar posts from the API
-    const fetchGuitars = async () => {
-      const response = await fetch('/api/guitars?featured=true');
-      const data = await response.json();
-      setGuitars(data);
-    };
-    fetchGuitars();
-  }, []);
-
-  const handleSearch = () => {
-    router.push({
-      pathname: '/explore',
-      query: { q: searchQuery },
-    });
-  };
+    const filtered = [
+      ...featuredGuitars,
+      ...newestGuitars,
+      ...topRatedGuitars,
+    ].filter((guitar) =>
+      guitar.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      guitar.model.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredGuitars(filtered);
+  }, [searchQuery, featuredGuitars, newestGuitars, topRatedGuitars]);
 
   return (
-    <div className="bg-gray-100 min-h-screen">
-      <header className="bg-navy-blue py-6 shadow-md">
-        <div className="container mx-auto px-4 flex items-center justify-between">
-          <a href="/" className="text-2xl font-bold text-white">
-            Guitar Site
-          </a>
-          <div className="flex items-center">
-            <input
-              type="text"
-              placeholder="Search for guitars..."
-              className="px-4 py-2 rounded-l-md border-gray-300 border-r-0 focus:outline-none focus:ring-2 focus:ring-orange"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button
-              className="bg-orange px-4 py-2 rounded-r-md text-white hover:bg-orange-500 focus:outline-none focus:ring-2 focus:ring-orange"
-              onClick={handleSearch}
-            >
-              <FaSearch />
-            </button>
-          </div>
+    <div className="container mx-auto py-8">
+      <section className="mb-8">
+        <h1 className="text-4xl font-bold mb-4">Welcome to Guitar Site</h1>
+        <p className="text-lg text-gray-600 mb-6">
+          Discover and share your guitar passion with the community.
+        </p>
+        <div className="flex items-center bg-gray-100 rounded-md px-4 py-2">
+          <FaSearch className="text-gray-400 mr-2" />
+          <input
+            type="text"
+            placeholder="Search for guitars..."
+            className="bg-transparent w-full focus:outline-none"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
-      </header>
+      </section>
 
-      <main className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-6">Featured Guitars</h1>
+      <section className="mb-12">
+        <h2 className="text-2xl font-bold mb-4">Featured Guitars</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {guitars.map((guitar) => (
-            <div key={guitar.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-              <img src={guitar.imageUrl} alt={guitar.title} className="w-full h-48 object-cover" />
-              <div className="p-4">
-                <h2 className="text-xl font-bold">{guitar.title}</h2>
-                <p className="text-gray-500 mb-2">
-                  {guitar.brand} {guitar.model} ({guitar.year})
-                </p>
-                <p className="text-gray-700 mb-4">{guitar.description}</p>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <img src={guitar.user.avatar} alt={guitar.user.name} className="w-8 h-8 rounded-full" />
-                    <span className="text-gray-500">{guitar.user.name}</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-gray-500">
-                    <span className="flex items-center space-x-1">
-                      <FaRegThumbsUp />
-                      <span>{guitar.likes}</span>
-                    </span>
-                    <span className="flex items-center space-x-1">
-                      <FaRegCommentAlt />
-                      <span>{guitar.comments}</span>
-                    </span>
-                    <FaShareAlt />
-                  </div>
-                </div>
-              </div>
-            </div>
+          {filteredGuitars.map((guitar) => (
+            <GuitarCard key={guitar.id} guitar={guitar} />
           ))}
         </div>
-      </main>
+      </section>
 
-      <footer className="bg-navy-blue text-white py-4">
-        <div className="container mx-auto px-4 flex items-center justify-between">
-          <p>&copy; 2023 Guitar Site. All rights reserved.</p>
-          <nav>
-            <ul className="flex space-x-4">
-              <li>
-                <a href="#" className="hover:text-orange">
-                  Home
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-orange">
-                  Explore
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-orange">
-                  Profile
-                </a>
-              </li>
-            </ul>
-          </nav>
+      <section className="mb-12">
+        <h2 className="text-2xl font-bold mb-4">Newest Guitars</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {newestGuitars.map((guitar) => (
+            <GuitarCard key={guitar.id} guitar={guitar} />
+          ))}
         </div>
-      </footer>
+      </section>
+
+      <section className="mb-12">
+        <h2 className="text-2xl font-bold mb-4">Top Rated Guitars</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {topRatedGuitars.map((guitar) => (
+            <GuitarCard key={guitar.id} guitar={guitar} />
+          ))}
+        </div>
+      </section>
     </div>
   );
 };
 
-export default Home;
+export default HomePage;
 ```
+
+The `GuitarCard` component used in this code is a separate component that displays the details of a single guitar, including the guitar's image, brand, model, and user information.

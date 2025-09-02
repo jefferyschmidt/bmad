@@ -4,7 +4,7 @@
 
 {
   "project_type": "web_application",
-  "tech_stack_reasoning": "Next.js provides a robust and scalable full-stack React framework that aligns well with the project requirements. Prisma offers a modern database toolkit that simplifies the data access layer, while PostgreSQL is a suitable choice for the relational data needs of the Guitar Site. This tech stack enables efficient development, good performance, and easy deployment to Vercel.",
+  "tech_stack_reasoning": "The Next.js + Prisma stack is the best choice for the Guitar Site project. Next.js provides a robust full-stack React framework with built-in server-side rendering, API routes, and TypeScript support, which aligns well with the project's requirements. Prisma is a modern database toolkit that simplifies database management and interactions, making it a great fit for the relational database needs of the Guitar Site. This tech stack also offers a good balance of performance, scalability, and developer productivity, which are crucial for a growing web application like the Guitar Site.",
   "selected_tech_stack_id": "nextjs_prisma",
   "frontend": {
     "name": "Next.js",
@@ -32,7 +32,7 @@
 web_application
 
 ## Reasoning
-Next.js provides a robust and scalable full-stack React framework that aligns well with the project requirements. Prisma offers a modern database toolkit that simplifies the data access layer, while PostgreSQL is a suitable choice for the relational data needs of the Guitar Site. This tech stack enables efficient development, good performance, and easy deployment to Vercel.
+The Next.js + Prisma stack is the best choice for the Guitar Site project. Next.js provides a robust full-stack React framework with built-in server-side rendering, API routes, and TypeScript support, which aligns well with the project's requirements. Prisma is a modern database toolkit that simplifies database management and interactions, making it a great fit for the relational database needs of the Guitar Site. This tech stack also offers a good balance of performance, scalability, and developer productivity, which are crucial for a growing web application like the Guitar Site.
 
 ## Frontend
 - Framework: Next.js
