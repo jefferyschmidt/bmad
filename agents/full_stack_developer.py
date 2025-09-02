@@ -1134,42 +1134,74 @@ class FullStackDeveloperAgent:
         files_created = []
         
         try:
-            # Analyze requirements to determine what pages to create
-            pages_prompt = f"""
-            Analyze these project requirements and determine what HTML pages should be created.
+            # First, generate the index.html page
+            index_prompt = f"""
+            Generate the main index.html page for this project.
             
             PROJECT: {project_name}
             REQUIREMENTS: {requirements}
-            REFINED REQUIREMENTS: {refined_requirements[:1000]}...
+            UX DESIGN: {ux_design[:1000]}...
             
-            Return ONLY a JSON array of page objects. Each page should have:
-            - "filename": the HTML filename (e.g., "index.html", "setup.html")
-            - "title": the page title
-            - "description": what content this page should contain
+            Return ONLY the complete HTML content. Include:
+            - HTML5 structure
+            - Proper meta tags
+            - Navigation menu with links to other pages (e.g., setup.html, email.html, security.html, about.html)
+            - Main content based on the project requirements
+            - Footer
+            - Link to CSS file ({'assets/css/main.css' if is_jekyll else 'css/style.css'})
+            - Link to JS file if needed ({'assets/js/main.js' if is_jekyll else 'js/main.js'})
             
-            Example: [{{"filename": "index.html", "title": "Home", "description": "Main landing page"}}]
+            Make sure to include navigation links to pages that make sense for this project.
             """
             
-            pages_response = await FullStackDeveloperAgent._call_ai_service(
-                prompt=pages_prompt,
+            index_response = await FullStackDeveloperAgent._call_ai_service(
+                prompt=index_prompt,
                 ai_provider=ai_provider,
                 db_session=db_session
             )
             
-            try:
-                pages_config = json.loads(pages_response)
-            except json.JSONDecodeError:
-                # Fallback to basic pages
-                pages_config = [
-                    {"filename": "index.html", "title": "Home", "description": "Main page"},
-                    {"filename": "about.html", "title": "About", "description": "About page"}
-                ]
+            # Write the index.html file
+            index_file = project_path / "index.html"
+            index_file.write_text(index_response.strip())
+            files_created.append("index.html")
             
-            # Generate each page
+            # Extract navigation links from the generated index.html
+            import re
+            nav_links = re.findall(r'href=["\']([^"\']*\.html)["\']', index_response)
+            nav_links = [link for link in nav_links if link != "index.html"]  # Remove self-reference
+            
+            # Extract the navigation HTML from index.html
+            nav_match = re.search(r'<nav[^>]*>(.*?)</nav>', index_response, re.DOTALL)
+            navigation_html = nav_match.group(1) if nav_match else ""
+            
+            # Create page configs for all navigation links
+            pages_config = [{"filename": "index.html", "title": "Home", "description": "Main landing page"}]
+            
+            for link in nav_links:
+                # Extract page name from filename
+                page_name = link.replace('.html', '').replace('-', ' ').replace('_', ' ').title()
+                pages_config.append({
+                    "filename": link,
+                    "title": page_name,
+                    "description": f"Page about {page_name.lower()}"
+                })
+            
+            # If no navigation links found, add some default pages
+            if len(pages_config) == 1:
+                pages_config.extend([
+                    {"filename": "about.html", "title": "About", "description": "About page"},
+                    {"filename": "contact.html", "title": "Contact", "description": "Contact page"}
+                ])
+            
+            # Generate each page (skip index.html since we already generated it)
             for page_config in pages_config:
                 filename = page_config["filename"]
                 title = page_config["title"]
                 description = page_config["description"]
+                
+                # Skip index.html since we already generated it
+                if filename == "index.html":
+                    continue
                 
                 page_prompt = f"""
                 Generate an HTML page for this project.
@@ -1180,14 +1212,19 @@ class FullStackDeveloperAgent:
                 REQUIREMENTS: {requirements}
                 UX DESIGN: {ux_design[:1000]}...
                 
+                IMPORTANT: Use this EXACT navigation menu from the index.html page:
+                {navigation_html}
+                
                 Return ONLY the complete HTML content. Include:
                 - HTML5 structure
                 - Proper meta tags
-                - Navigation
+                - Navigation menu with the EXACT HTML provided above
                 - Main content based on the page description and project requirements
                 - Footer
                 - Link to CSS file ({'assets/css/main.css' if is_jekyll else 'css/style.css'})
                 - Link to JS file if needed ({'assets/js/main.js' if is_jekyll else 'js/main.js'})
+                
+                Do NOT modify the navigation menu. Use the exact HTML provided above.
                 """
                 
                 page_response = await FullStackDeveloperAgent._call_ai_service(
@@ -1196,10 +1233,7 @@ class FullStackDeveloperAgent:
                     db_session=db_session
                 )
                 
-                if is_jekyll and filename == "index.html":
-                    # For Jekyll, index.html goes in root, others go in pages/
-                    page_file = project_path / filename
-                elif is_jekyll:
+                if is_jekyll:
                     pages_dir = project_path / "pages"
                     pages_dir.mkdir(exist_ok=True)
                     page_file = pages_dir / filename
