@@ -4,22 +4,22 @@
 
 {
   "project_type": "static_website",
-  "tech_stack_reasoning": "Since this project is a simple HTML website with static instructional content, a static site generator approach is the optimal solution. This allows for easy content management, efficient deployment, and a secure hosting solution without the need for a complex backend or database integration.",
+  "tech_stack_reasoning": "This project is a simple HTML website with instructional content, which does not require a complex backend or database. A static website solution with a static site generator is the optimal choice for this project.",
   "frontend": {
-    "framework": "Jekyll",
-    "language": "HTML/CSS",
+    "framework": "None",
+    "language": "HTML, CSS",
     "styling": "CSS"
   },
   "backend": {
-    "language": null,
-    "framework": null
+    "language": "None",
+    "framework": "None"
   },
   "database": {
-    "type": null
+    "type": "None"
   },
   "deployment": {
     "platform": "GitHub Pages",
-    "containerization": null
+    "containerization": "None"
   }
 }
 
@@ -27,11 +27,11 @@
 static_website
 
 ## Reasoning
-Since this project is a simple HTML website with static instructional content, a static site generator approach is the optimal solution. This allows for easy content management, efficient deployment, and a secure hosting solution without the need for a complex backend or database integration.
+This project is a simple HTML website with instructional content, which does not require a complex backend or database. A static website solution with a static site generator is the optimal choice for this project.
 
 ## Frontend
-- Framework: Jekyll
-- Language: HTML/CSS
+- Framework: None
+- Language: HTML, CSS
 - Styling: CSS
 
 ## Backend
